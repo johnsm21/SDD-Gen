@@ -1,7 +1,11 @@
+import requests
+from SPARQLWrapper import SPARQLWrapper, JSON
 
+prefixMap = {}
 
-def generateAMRTextFile(blazegraphURL, file):
+def getInstalledOntologies():
     base_url = "http://localhost:9999"
+    namespace = "mapper"
     blazegraphURL = base_url + "/blazegraph/namespace/" + namespace + "/sparql"
     sparql = SPARQLWrapper(blazegraphURL)
 
@@ -11,7 +15,10 @@ def generateAMRTextFile(blazegraphURL, file):
         where{
             graph ?g {
                 ?onto a owl:Ontology .
-                ?onto owl:versionInfo ?ver .
+
+                optional {
+                    ?onto owl:versionInfo ?ver .
+                }
 
                 optional {
                     ?onto vann:preferredNamespaceUri ?perfer
@@ -23,23 +30,30 @@ def generateAMRTextFile(blazegraphURL, file):
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
 
+    ontologies = []
     for result in results["results"]["bindings"]:
-        classIRI = result["class"]["value"]
-        className = result["className"]["value"]
-        description = result["description"]["value"]
-        classIndex.append((classIRI, className))
+        version = '1.0'
 
-        # If there are multiple sentences only look at the first one
-        sentence = description.split(".")[0].replace('\n', ' ')
-        the_file.write(sentence + "." + '\n')
-    return classIndex
+        baseUri = result["onto"]["value"]
+
+        if "ver" in result:
+            version = result["ver"]["value"]
+
+        if "perfer" in result:
+            baseUri = result["perfer"]["value"]
+
+
+        ontologies.append((getPrefixCC(baseUri), baseUri, version));
+    return ontologies
 
 def getPrefixCC(url):
-    response = requests.get('https://prefix.cc/', params={'q': url})
-    json_response = response.json()
+    if not prefixMap.has_key(url):
+        print("Had to look up")
+        response = requests.get('https://prefix.cc/', params={'q': url})
 
-    if(response.status_code == 201):
-        return "none"
-    else:
-        print(json_response)
-        return "found"
+        if(response.status_code == 201):
+            prefixMap[url] = "NONE"
+        else:
+            prefixMap[url] = response.content.split(" | prefix.cc</title>")[0].split("<title property=\"dc:title\">")[1]
+
+    return prefixMap[url]

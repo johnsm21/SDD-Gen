@@ -7,10 +7,11 @@ sys.path.append('lib/camr/')
 import amr_parsing
 import os
 
-from flask import flash, request, redirect, url_for, render_template
+from flask import flash, request, redirect, url_for, render_template, jsonify
 from werkzeug.utils import secure_filename
 
 import ontology_pipeline
+import view
 
 from rdflib import Graph
 
@@ -24,6 +25,34 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route('/check-ontology/', methods=['POST'])
+def check_ontology():
+    req_data = request.get_json()
+    print(req_data)
+
+    # create an array of IRIs
+    onts = view.getInstalledOntologies()
+    ontologies = []
+    for ont in onts:
+        ontologies.append(ont[1])
+
+    source_urls = req_data['source-urls']
+    urls = []
+    for url in source_urls:
+        d = {}
+        d['url'] = url
+        if url in ontologies:
+            d['ready'] = True
+        else:
+            d['ready'] = False
+        urls.append(d)
+
+    response = {}
+    response['source-urls'] = urls
+    return jsonify(response)
+    #return "201"
 
 @app.route('/upload/', methods=['GET', 'POST'])
 def upload_file():
@@ -63,16 +92,26 @@ def upload_file():
 def index():
     head = {'ontologies': 'true'}
 
-    ontologies = [
-        {
-            'name': 'sio',
-            'iri': 'http://semanticscience.org/resource/'
-        },
-        {
-            'name': 'foaf',
-            'iri': 'http://xmlns.com/foaf/0.1/'
+    onts = view.getInstalledOntologies()
+
+    ontologies = []
+    for ont in onts:
+        print(ont)
+        ontDicr = {
+            'name': ont[0],
+            'iri': ont[1]
         }
-    ]
+        ontologies.append(ontDicr)
+    # ontologies = [
+    #     {
+    #         'name': 'sio',
+    #         'iri': 'http://semanticscience.org/resource/'
+    #     },
+    #     {
+    #         'name': 'foaf',
+    #         'iri': 'http://xmlns.com/foaf/0.1/'
+    #     }
+    # ]
     return render_template('ontologies.html', head=head, ontologies=ontologies)
 
 def temp():

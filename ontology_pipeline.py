@@ -20,24 +20,38 @@ def ingest(file):
     print("number of triples "+ str(g))
 
     res = g.query(
-    """select ?onto ?ver
-        where{
-            ?onto a owl:Ontology .
-            ?onto owl:versionInfo ?ver .
-        }""")
+    """select ?onto ?ver ?verIRI
+       where{
+          ?onto a owl:Ontology .
+          optional{
+             ?onto owl:versionInfo ?ver .
+          }
+          optional{
+             ?onto owl:versionIRI ?verIRI .
+          }
+       }""")
 
     for row in res:
         ontology = row.onto
         version = row.ver
+        versionIRI = row.verIRI
     g = None # Release resources
 
+    if versionIRI is None:
+        if version is None:
+            version = '1.0'
+        base_graph_namespace = ontology + "/" + version
+    else:
+        base_graph_namespace = versionIRI
+
+    print(base_graph_namespace)
 
     # Create a namespace for it
     namespace = "mapper"
     base_url = "http://localhost:9999"
     sparql_ep = base_url + "/blazegraph/namespace/" + namespace + "/sparql"
 
-    base_graph_namespace = ontology + "/" + version
+
     graph_namespace = base_graph_namespace + "/ontology"
 
     # Check if namespace exits
