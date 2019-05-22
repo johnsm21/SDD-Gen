@@ -4,6 +4,7 @@ app = Flask(__name__)
 import sys
 sys.path.append('lib/camr/')
 
+import globals
 import amr_parsing
 import os
 
@@ -18,9 +19,12 @@ from rdflib import Graph
 import requests
 import shutil
 
+
 UPLOAD_FOLDER = "temp/"
 ALLOWED_EXTENSIONS = set(['owl'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+globals.init()
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -33,18 +37,18 @@ def check_ontology():
     print(req_data)
 
     # create an array of IRIs
-    onts = view.getInstalledOntologies()
-    ontologies = []
+    onts = view.getFullyInstalledOntologies()
+    ontologies = {}
     for ont in onts:
-        ontologies.append(ont[1])
+        ontologies[ont[1]] = ont
 
     source_urls = req_data['source-urls']
     urls = []
     for url in source_urls:
         d = {}
         d['url'] = url
-        if url in ontologies:
-            d['ready'] = True
+        if url in ontologies.keys():
+            d['ready'] = ontologies[url][3] and ontologies[url][4]
         else:
             d['ready'] = False
         urls.append(d)
@@ -52,7 +56,6 @@ def check_ontology():
     response = {}
     response['source-urls'] = urls
     return jsonify(response)
-    #return "201"
 
 @app.route('/upload/', methods=['GET', 'POST'])
 def upload_file():
@@ -92,14 +95,17 @@ def upload_file():
 def index():
     head = {'ontologies': 'true'}
 
-    onts = view.getInstalledOntologies()
+    onts = view.getFullyInstalledOntologies()
 
     ontologies = []
     for ont in onts:
         print(ont)
         ontDicr = {
             'name': ont[0],
-            'iri': ont[1]
+            'iri': ont[1],
+            'version': ont[2],
+            'amrDone': ont[3],
+            'notInProgress': ont[4],
         }
         ontologies.append(ontDicr)
     # ontologies = [
@@ -141,31 +147,37 @@ def download_file_plus(filename, url):
     file.write(r.text)
     file.close()
 
-    print(filename)
-
     g = Graph()
+    found = True
     try:
         g.parse(filename, format="xml")
+        os.rename(filename, filename.replace(".owl", ".xml"))
+        filename = filename.replace(".owl", ".xml")
     except:
         print("not xml")
         try:
             g.parse(filename, format="ttl")
             os.rename(filename, filename.replace(".owl", ".ttl"))
+            filename = filename.replace(".owl", ".ttl")
         except:
             print("not ttl")
             try:
                 g.parse(filename, format="n3")
                 os.rename(filename, filename.replace(".owl", ".n3"))
+                filename = filename.replace(".owl", ".n3")
             except:
                 print("not n3")
                 try:
                     g.parse(filename, format="ntriples")
+                    os.rename(filename, filename.replace(".owl", ".nt"))
+                    filename = filename.replace(".owl", ".nt")
                 except:
+                    found = False
                     print("not ntriples")
     print("graph length = " + str(len(g)))
 
 
-    return filename
+    return [filename, found]
 
 def download_rdf(filename, url):
     g = Graph()
@@ -178,14 +190,27 @@ def load_ontology():
     source_urls = req_data['source-urls']
 
     ontoIndex = 0
+    urls = []
     for url in source_urls:
         print(url)
         # response = requests.get(url)
         # print(response.text)
-        download_file_plus(UPLOAD_FOLDER + str(ontoIndex) + ".owl", url)
+        [file, work] = download_file_plus(UPLOAD_FOLDER + str(ontoIndex) + ".owl", url)
+
+        if work:
+            print("Ingesting " + url)
+            ontology_pipeline.ingest(file)
+
+        d = {}
+        d['url'] = url
+        d['ready'] = work
+        urls.append(d)
         # download_rdf(UPLOAD_FOLDER + str(ontoIndex) + ".owl", url)
         ontoIndex = ontoIndex + 1
-    return "201"
+
+    response = {}
+    response['source-urls'] = urls
+    return jsonify(response)
 
 @app.route('/json-example', methods=['POST']) #GET requests will be blocked
 def json_example():

@@ -1,3 +1,4 @@
+import globals
 import os
 import requests
 from SPARQLWrapper import SPARQLWrapper, JSON
@@ -10,17 +11,53 @@ sys.path.append('lib/camr/')
 
 import amr_parsing
 
+
+rdfFileType = {
+'rdf' : 'rdf/xml',
+'rdfs' : 'rdf/xml',
+'owl' : 'rdf/xml',
+'xml' : 'rdf/xml',
+
+'nt' : 'n-triples',
+
+'ttl' : 'turtle',
+
+'n3' : 'n3',
+
+'nq' : 'n-quads'
+}
+
 def ingest(file):
     # Figure out what ontology this is
     ontology = None
     version = None
 
     g = Graph()
-    g.parse(file)
-    print("number of triples "+ str(g))
+
+    print(file)
+    try:
+        g.parse(file, format="xml")
+    except:
+        print("not xml")
+        try:
+            g.parse(file, format="ttl")
+        except:
+            print("not ttl")
+            try:
+                g.parse(file, format="n3")
+            except:
+                print("not n3")
+                try:
+                    g.parse(file, format="ntriples")
+                except:
+                    print("not ntriples")
+
+    # g.parse(file)
+    print("number of triples "+ str(len(g)))
 
     res = g.query(
-    """select ?onto ?ver ?verIRI
+    """
+       select ?onto ?ver ?verIRI
        where{
           ?onto a owl:Ontology .
           optional{
@@ -54,6 +91,8 @@ def ingest(file):
 
     graph_namespace = base_graph_namespace + "/ontology"
 
+    globals.ontoInProgress[base_graph_namespace] = True
+
     # Check if namespace exits
     if checkIfNamespaceExits(sparql_ep, graph_namespace):
         print("Note graph: " + graph_namespace + " already exists skipping ontology load")
@@ -61,6 +100,7 @@ def ingest(file):
         print("Note graph: " + graph_namespace + " not found starting ontology load")
         if not loadQuad(base_url, graph_namespace, file, namespace):
             print("Error: Couldn't load: " + file)
+            globals.ontoInProgress[base_graph_namespace] = False
             return False
 
 
@@ -90,7 +130,10 @@ def ingest(file):
         ontoToLabel(descriptFile + ".all.basic-abt-brown-verb.parsed", classIndex)
         if not loadQuad(base_url, amr_namespace, descriptFile + ".all.basic-abt-brown-verb.parsed" + ".rdf", namespace):
             print("Error: Couldn't load: " + amr_namespace, descriptFile + ".all.basic-abt-brown-verb.parsed" + ".rdf")
+            globals.ontoInProgress[base_graph_namespace] = False
             return False
+
+    globals.ontoInProgress[base_graph_namespace] = False
 
     # Clean up temp directory
     textfile_dir = "temp/"
@@ -239,12 +282,13 @@ def loadQuad(blazegraphURL, quadnamespace, file, namespace):
     headers = {
         'Content-Type': 'application/xml',
     }
-
+    format = rdfFileType[file.split('.')[-1]]
+    print(format)
     data = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
             <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
         	  <properties>
         	      <!-- RDF Format (Default is rdf/xml) -->
-        	      <entry key="format">rdf/xml</entry>
+        	      <entry key="format">""" + format + """</entry>
 
         	      <!-- Default Graph URI (Optional - Required for quads mode namespace) -->
                   <entry key="defaultGraph">""" + quadnamespace + """</entry>
