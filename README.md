@@ -1,1 +1,5 @@
-# data-dictionary-ontology-mapper
+# SDDGen
+
+SDDGen is a web service that automates the [Semantic Data Dictionaries](https://tetherless-world.github.io/sdd/) generation process.
+
+Datasets in the wild often have data dictionaries (definitions explaining a column or row within a dataset) associated with them to provide humans with a better understanding of the data. Recently researchers have developed a formal methodology to capture and share this information in a machine-readable way through Semantic Data Dictionaries (SDD). However, to form an SDD today a domain expert (medical doctor, scientist) needs to manually form the connections between attribute/subjects and ontological terms. This process can be especially challenging because domain experts are often not ontology experts. To expedite this process our team has focused on automatically extracting the subject of attributes from data dictionarys (and mapping them to an entity type?), which will allow domain experts to focus on reviewing mappings instead of exploring ontologies for new terms.
