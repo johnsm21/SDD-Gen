@@ -1,5 +1,11 @@
 # SDDGen
+Datasets in the wild often have data dictionaries (definitions explaining a column or row within a dataset) associated with them to provide humans with a better understanding of the data. Recently researchers have developed a formal methodology to capture and share this information in a machine-readable way through [Semantic Data Dictionaries](https://tetherless-world.github.io/sdd/)(SDD)[1]. However, to form a SDD a domain expert (medical doctor, scientist) needs to manually map attribute/subjects to ontological terms. This process can be challenging because domain experts are often not ontology experts. 
 
-SDDGen is a web service that automates the [Semantic Data Dictionaries](https://tetherless-world.github.io/sdd/) generation process.
+To address this issue our team has created SDDGen a web service that automates the SDD generation process. Provided with a data dictionary and a list of ontologies to form mappings from SDDGen generates an SDD along with the other N-1 most likely mappings for each cell. This allows domain experts to focus on reviewing mappings instead of exploring ontologies for terms which expedites SDD creation.
 
-Datasets in the wild often have data dictionaries (definitions explaining a column or row within a dataset) associated with them to provide humans with a better understanding of the data. Recently researchers have developed a formal methodology to capture and share this information in a machine-readable way through Semantic Data Dictionaries (SDD). However, to form an SDD today a domain expert (medical doctor, scientist) needs to manually form the connections between attribute/subjects and ontological terms. This process can be especially challenging because domain experts are often not ontology experts. To expedite this process our team has focused on automatically extracting the subject of attributes from data dictionarys (and mapping them to an entity type?), which will allow domain experts to focus on reviewing mappings instead of exploring ontologies for new terms.
+To form mappings SDDGen uses the Context-Specific Entity Embedding strategy developed in [2] to generate embeddings for ontology class descriptions and data dictionary definitions. Then within this new search space we find which ontology classes align best with SDD properties.
+
+## References
+[1] Rashid, Sabbir M., et al. "The Semantic Data Dictionary Approach to Data Annotation & Integration." SemSci@ ISWC. 2017.
+
+[2] Huang, Lifu, et al. "Building a fine-grained entity typing system overnight for a new x (x= language, domain, genre)." arXiv preprint arXiv:1603.03112 (2016).
