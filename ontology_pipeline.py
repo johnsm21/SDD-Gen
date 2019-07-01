@@ -99,7 +99,7 @@ def ingest(file):
     else:
         print("Note graph: " + graph_namespace + " not found starting ontology load")
         if not loadQuad(base_url, graph_namespace, file, namespace):
-            print("Error: Couldn't load: " + file)
+            print("checkIfNamespaceExits Error: Couldn't load: " + file)
             globals.ontoInProgress[base_graph_namespace] = False
             return False
 
@@ -140,7 +140,8 @@ def ingest(file):
     files = os.listdir(textfile_dir)
     for file in files:
         if file.endswith(".good") or file.endswith(".txt") or file.endswith(".prp") or file.endswith(".tok") or file.endswith(".parse") or file.endswith(".dep") or file.endswith(".parsed"):
-            os.remove(os.path.join(textfile_dir, file))
+            # os.remove(os.path.join(textfile_dir, file))
+            print('Skipping the clean')
 
     return True
 

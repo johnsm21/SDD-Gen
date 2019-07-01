@@ -57,6 +57,44 @@ def check_ontology():
     response['source-urls'] = urls
     return jsonify(response)
 
+@app.route('/get-sdd/', methods=['GET','POST'])
+def get_sdd():
+
+    chearid = {}
+    chearid['column'] = 'CHEARPID'
+    chearid['attribute'] = [{"value": "hasco:originalID", "confidence": 0.9}, {"value": "sio:Number", "confidence": 0.7}, {"value": "chear:Weight", "confidence": 0.25}]
+    chearid['attributeOf'] = [{"value": '??mother', "confidence": 0.85}, {"value": '??child', "confidence": 0.85}, {"value": '??birth', "confidence": 0.5}]
+
+    age = {}
+    age['column'] = 'age'
+    age['attribute'] = [{"value": "sio:Age", "confidence": 0.95}, {"value": "sio:Number", "confidence": 0.6}, {"value": "chear:Birth", "confidence": 0.2}]
+    age['attributeOf'] = [{"value": '??mother', "confidence": 0.85}, {"value": '??child', "confidence": 0.85}, {"value": '??birth', "confidence": 0.5}]
+    columns = [chearid, age]
+
+
+    prepregnancy = {}
+    prepregnancy['column'] = '??prepregnancy'
+    prepregnancy['entity'] = [{"value": "chear:PrePregnancy", "confidence": 0.8}, {"value": "chear:Pregnancy", "confidence": 0.7}, {"value": "chear:Birth", "confidence": 0.6}]
+
+    head = {}
+    head['column'] = '??head'
+    head['entity'] = [{"value": "uberon:0000033", "confidence": 1.0}, {"value": "chear:Pregnancy", "confidence": 0.2}, {"value": "chear:Weight", "confidence": 0.1}]
+    head['relation'] = [{"value": "sio:isPartOf", "confidence": 0.7}, {"value": "sio:isProperPartOf", "confidence": 0.7}, {"value": "sio:isLocatedIn", "confidence": 0.5}]
+    virtual_columns = [prepregnancy, head]
+
+    sheet = {}
+    sheet['columns'] = columns
+    sheet['virtual-columns'] = virtual_columns
+
+    sdd = {}
+    sdd['Dictionary Mapping'] = sheet
+
+    response = {}
+    response['N'] = 3
+    response['sdd'] = sdd
+
+    return jsonify(response)
+
 @app.route('/upload/', methods=['GET', 'POST'])
 def upload_file():
     head = {'upload': 'true'}
@@ -208,6 +246,18 @@ def load_ontology():
         # download_rdf(UPLOAD_FOLDER + str(ontoIndex) + ".owl", url)
         ontoIndex = ontoIndex + 1
 
+    response = {}
+    response['source-urls'] = urls
+    return jsonify(response)
+
+
+@app.route('/populate-sdd', methods=['POST'])
+def populate_sdd():
+    req_data = request.get_json()
+    print(req_data)
+
+
+    urls = []
     response = {}
     response['source-urls'] = urls
     return jsonify(response)
