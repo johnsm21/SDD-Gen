@@ -7,7 +7,9 @@ To form mappings SDDGen uses the Context-Specific Entity Embedding strategy deve
 
 ## Requirements
 [python 3](https://www.python.org/download/releases/3.0/)
+
 [java 8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+
 [blazegraph](https://www.blazegraph.com/download/)
 
 ## Install
