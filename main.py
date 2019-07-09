@@ -2,7 +2,7 @@ from flask import Flask
 app = Flask(__name__)
 
 import sys
-sys.path.append('lib/camr/')
+sys.path.append('lib/CAMR-Python3/')
 
 import globals
 import amr_parsing

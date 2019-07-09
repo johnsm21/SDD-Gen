@@ -7,7 +7,7 @@ from rdflib.namespace import RDF
 from rdflib import URIRef, Namespace, Graph, Literal
 
 import sys
-sys.path.append('lib/camr/')
+sys.path.append('lib/CAMR-Python3/')
 
 import amr_parsing
 
@@ -17,13 +17,9 @@ rdfFileType = {
 'rdfs' : 'rdf/xml',
 'owl' : 'rdf/xml',
 'xml' : 'rdf/xml',
-
 'nt' : 'n-triples',
-
 'ttl' : 'turtle',
-
 'n3' : 'n3',
-
 'nq' : 'n-quads'
 }
 
@@ -33,8 +29,6 @@ def ingest(file):
     version = None
 
     g = Graph()
-
-    print(file)
     try:
         g.parse(file, format="xml")
     except:
@@ -52,7 +46,6 @@ def ingest(file):
                 except:
                     print("not ntriples")
 
-    # g.parse(file)
     print("number of triples "+ str(len(g)))
 
     res = g.query(
@@ -69,9 +62,9 @@ def ingest(file):
        }""")
 
     for row in res:
-        ontology = row.onto
-        version = row.ver
-        versionIRI = row.verIRI
+        ontology = str(row.onto)
+        version = str(row.ver)
+        versionIRI = str(row.verIRI)
     g = None # Release resources
 
     if versionIRI is None:
@@ -81,7 +74,7 @@ def ingest(file):
     else:
         base_graph_namespace = versionIRI
 
-    print(base_graph_namespace)
+    print('base_graph_namespace = ' + str(base_graph_namespace))
 
     # Create a namespace for it
     namespace = "mapper"
@@ -94,10 +87,18 @@ def ingest(file):
     globals.ontoInProgress[base_graph_namespace] = True
 
     # Check if namespace exits
+    print( '1 sparql_ep = ' + str(sparql_ep))
+    print( '2 graph_namespace = ' + str(graph_namespace))
     if checkIfNamespaceExits(sparql_ep, graph_namespace):
         print("Note graph: " + graph_namespace + " already exists skipping ontology load")
     else:
+        # Load Ontology into blazegraph
         print("Note graph: " + graph_namespace + " not found starting ontology load")
+
+        print( '3 base_url = ' + str(base_url))
+        print( '4 graph_namespace = ' + str(graph_namespace))
+        print( '5 file = ' + str(file))
+        print( '6 namespace = ' + str(namespace))
         if not loadQuad(base_url, graph_namespace, file, namespace):
             print("checkIfNamespaceExits Error: Couldn't load: " + file)
             globals.ontoInProgress[base_graph_namespace] = False
@@ -106,16 +107,21 @@ def ingest(file):
 
     # Check if amr graph exists
     amr_namespace = base_graph_namespace + "/amr"
+    print( '7 sparql_ep = ' + str(sparql_ep))
+    print( '8 amr_namespace = ' + str(amr_namespace))
     if checkIfNamespaceExits(sparql_ep, amr_namespace):
         print("Note graph: " + amr_namespace + " already exists skipping AMR load")
     else:
         print("Note graph: " + amr_namespace + " not found begin loading")
         descriptFile = file + ".txt"
-        classIndex = generateAMRTextFile(sparql_ep, descriptFile)
+        print( '9 sparql_ep = ' + str(sparql_ep))
+        print( '10 descriptFile = ' + str(descriptFile))
+        classIndex = generateAMRTextFile(sparql_ep, graph_namespace, descriptFile)
         print("generated description file!")
 
         # Run AMR
-        model = 'lib/amr-semeval-all.train.basic-abt-brown-verb.m'
+        # model = 'lib/amr-semeval-all.train.basic-abt-brown-verb.m'
+        model = 'lib/python3_model_5.basic-abt-brown-verb.m'
 
         # run the preprocessor
         sys.argv = ['amr_parsing.py','-m', 'preprocess', descriptFile]
@@ -127,7 +133,13 @@ def ingest(file):
         print("Finished Running AMR")
 
         # run the AMR to RDF converter
+        print( '11 descriptFile + ".all.basic-abt-brown-verb.parsed" = ' + str(descriptFile + ".all.basic-abt-brown-verb.parsed"))
+        print( '12 classIndex = ' + str(classIndex))
         ontoToLabel(descriptFile + ".all.basic-abt-brown-verb.parsed", classIndex)
+        print( '13 base_url = ' + str(base_url))
+        print( '14 amr_namespace = ' + str(amr_namespace))
+        print( '15 descriptFile + ".all.basic-abt-brown-verb.parsed" + ".rdf" = ' + str(descriptFile + ".all.basic-abt-brown-verb.parsed" + ".rdf"))
+        print( '16 namespace = ' + str(namespace))
         if not loadQuad(base_url, amr_namespace, descriptFile + ".all.basic-abt-brown-verb.parsed" + ".rdf", namespace):
             print("Error: Couldn't load: " + amr_namespace, descriptFile + ".all.basic-abt-brown-verb.parsed" + ".rdf")
             globals.ontoInProgress[base_graph_namespace] = False
@@ -139,7 +151,7 @@ def ingest(file):
     textfile_dir = "temp/"
     files = os.listdir(textfile_dir)
     for file in files:
-        if file.endswith(".good") or file.endswith(".txt") or file.endswith(".prp") or file.endswith(".tok") or file.endswith(".parse") or file.endswith(".dep") or file.endswith(".parsed"):
+        if file.endswith(".fail") or file.endswith(".good") or file.endswith(".txt") or file.endswith(".prp") or file.endswith(".tok") or file.endswith(".parse") or file.endswith(".dep") or file.endswith(".parsed"):
             # os.remove(os.path.join(textfile_dir, file))
             print('Skipping the clean')
 
@@ -232,17 +244,25 @@ def ontoToLabel(filepathIn, classIndex):
                                 print("^^^^^^BAD^^^^^^^")
     g.serialize(destination=filepathIn + ".rdf", format="pretty-xml")
 
-def generateAMRTextFile(blazegraphURL, file):
+def generateAMRTextFile(blazegraphURL, graph_namespace, file):
     sparql = SPARQLWrapper(blazegraphURL)
     sparql.setQuery("""
-        PREFIX dcterm: <http://purl.org/dc/terms/>
-        SELECT DISTINCT ?class ?className ?description
-        WHERE{
-            ?class a owl:Class ;
-            rdfs:label ?className ;
-            dcterm:description ?description  ;
+        prefix dcterm: <http://purl.org/dc/terms/>
+        prefix skos: <http://www.w3.org/2004/02/skos/core#>
+        select distinct ?class ?className ?description ?definition
+        where{
+          graph <%s> {
+            ?class  a           owl:Class ;
+                    rdfs:label  ?className .
+            optional{
+              ?class dcterm:description ?description .
+            }
+            optional{
+              ?class skos:definition ?definition .
+            }
+          }
         } order by asc(?className)
-        """)
+        """ % graph_namespace)
 
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
@@ -250,14 +270,20 @@ def generateAMRTextFile(blazegraphURL, file):
     classIndex = []
     with open(file, 'w') as the_file:
         for result in results["results"]["bindings"]:
-            classIRI = result["class"]["value"]
-            className = result["className"]["value"]
-            description = result["description"]["value"]
-            classIndex.append((classIRI, className))
+            classIRI = str(result["class"]["value"])
+            className = str(result["className"]["value"])
 
-            # If there are multiple sentences only look at the first one
-            sentence = description.split(".")[0].replace('\n', ' ')
-            the_file.write(sentence + "." + '\n')
+            if ("description" in result) or ("definition" in result):
+                if "description" in result:
+                    description = str(result["description"]["value"])
+                else:
+                    description = str(result["definition"]["value"])
+
+                classIndex.append((classIRI, className))
+
+                # If there are multiple sentences only look at the first one
+                sentence = description.split(".")[0].replace('\n', ' ')
+                the_file.write(sentence + "." + '\n')
     return classIndex
 
 
@@ -265,11 +291,11 @@ def checkIfNamespaceExits(blazegraphURL, namespace):
     sparql = SPARQLWrapper(blazegraphURL)
     sparql.setQuery("""
         ask{
-          graph <""" + namespace + """> {
+          graph <%s> {
             ?s ?p ?o .
           }
          }
-        """)
+        """ % namespace)
 
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
@@ -277,47 +303,33 @@ def checkIfNamespaceExits(blazegraphURL, namespace):
 
 def loadQuad(blazegraphURL, quadnamespace, file, namespace):
     filepath = os.path.abspath(file)
-    print("Filepath = " + filepath)
     propertiesPath = "RWStore.properties"
-
-    headers = {
-        'Content-Type': 'application/xml',
-    }
     format = rdfFileType[file.split('.')[-1]]
-    print(format)
-    data = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+    # RDF Format (Default is rdf/xml)
+    # Default Graph URI (Optional - Required for quads mode namespace)
+    # Suppress all stdout messages (Optional)
+    # Show additional messages detailing the load performance. (Optional)
+    # Compute the RDF(S)+ closure. (Optional)
+    # Files will be renamed to either .good or .fail as they are processed.
+    # The namespace of the KB instance. Defaults to kb.
+    # The configuration file for the database instance. It must be readable by the web application.
+    # Zero or more files or directories containing the data to be loaded. This should be a comma delimited list. The files must be readable by the web application.
+    data = f"""<?xml version="1.0" encoding="UTF-8" standalone="no"?>
             <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
         	  <properties>
-        	      <!-- RDF Format (Default is rdf/xml) -->
-        	      <entry key="format">""" + format + """</entry>
-
-        	      <!-- Default Graph URI (Optional - Required for quads mode namespace) -->
-                  <entry key="defaultGraph">""" + quadnamespace + """</entry>
-
-        	      <!-- Suppress all stdout messages (Optional) -->
+        	      <entry key="format">{format}</entry>
+        	      <entry key="defaultGraph">{quadnamespace}</entry>
         	      <entry key="quiet">false</entry>
-
-        	      <!-- Show additional messages detailing the load performance. (Optional) -->
         	      <entry key="verbose">0</entry>
-
-        	     <!-- Compute the RDF(S)+ closure. (Optional) -->
-                     <entry key="closure">false</entry>
-
-        	     <!-- Files will be renamed to either .good or .fail as they are processed.
-                           The files will remain in the same directory. -->
-        	     <entry key="durableQueues">true</entry>
-
-        	     <!-- The namespace of the KB instance. Defaults to kb. -->
-        	     <entry key="namespace">""" + namespace + """</entry>
-
-        	     <!-- The configuration file for the database instance. It must be readable by the web application. -->
-                     <entry key="propertyFile">""" + propertiesPath + """</entry>
-
-        	     <!-- Zero or more files or directories containing the data to be loaded.
-                           This should be a comma delimited list. The files must be readable by the web application. -->
-
-                   <entry key="fileOrDirs">""" + filepath + """</entry>
+        	      <entry key="closure">false</entry>
+        	      <entry key="durableQueues">true</entry>
+        	      <entry key="namespace">{namespace}</entry>
+        	      <entry key="propertyFile">{propertiesPath}</entry>
+        	      <entry key="fileOrDirs">{filepath}</entry>
               </properties>"""
 
+    headers = {'Content-Type': 'application/xml',}
     response = requests.post(blazegraphURL + "/blazegraph/dataloader", headers=headers, data=data)
-    return response.status_code == 201
+    print(response)
+    return (response.status_code == 201) or (response.status_code == 200)

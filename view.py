@@ -130,13 +130,14 @@ def getFullyInstalledOntologies():
     return ontologies
 
 def getPrefixCC(url):
-    if not prefixMap.has_key(url):
+
+    if url not in prefixMap.keys():
         print("Had to look up")
         response = requests.get('https://prefix.cc/', params={'q': url})
 
         if(response.status_code == 201):
             prefixMap[url] = "NONE"
         else:
-            prefixMap[url] = response.content.split(" | prefix.cc</title>")[0].split("<title property=\"dc:title\">")[1]
+            prefixMap[url] = response.content.decode('utf-8').split(" | prefix.cc</title>")[0].split("<title property=\"dc:title\">")[1]
 
     return prefixMap[url]
