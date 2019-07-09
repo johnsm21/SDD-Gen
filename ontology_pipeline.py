@@ -134,7 +134,7 @@ def ingest(file):
 
         # run the AMR to RDF converter
         print( '11 descriptFile + ".all.basic-abt-brown-verb.parsed" = ' + str(descriptFile + ".all.basic-abt-brown-verb.parsed"))
-        print( '12 classIndex = ' + str(classIndex))
+        # print( '12 classIndex = ' + str(classIndex))
         ontoToLabel(descriptFile + ".all.basic-abt-brown-verb.parsed", classIndex)
         print( '13 base_url = ' + str(base_url))
         print( '14 amr_namespace = ' + str(amr_namespace))
@@ -152,8 +152,7 @@ def ingest(file):
     files = os.listdir(textfile_dir)
     for file in files:
         if file.endswith(".fail") or file.endswith(".good") or file.endswith(".txt") or file.endswith(".prp") or file.endswith(".tok") or file.endswith(".parse") or file.endswith(".dep") or file.endswith(".parsed"):
-            # os.remove(os.path.join(textfile_dir, file))
-            print('Skipping the clean')
+            os.remove(os.path.join(textfile_dir, file))
 
     return True
 
@@ -268,22 +267,27 @@ def generateAMRTextFile(blazegraphURL, graph_namespace, file):
     results = sparql.query().convert()
 
     classIndex = []
+    classIRIs = []
+
     with open(file, 'w') as the_file:
         for result in results["results"]["bindings"]:
             classIRI = str(result["class"]["value"])
             className = str(result["className"]["value"])
+            if classIRI in classIRIs:
+                print('Duplicate description for ' + classIRI)
+            else:
+                if ("description" in result) or ("definition" in result):
+                    if "description" in result:
+                        description = str(result["description"]["value"])
+                    else:
+                        description = str(result["definition"]["value"])
 
-            if ("description" in result) or ("definition" in result):
-                if "description" in result:
-                    description = str(result["description"]["value"])
-                else:
-                    description = str(result["definition"]["value"])
+                    classIndex.append((classIRI, className))
+                    classIRIs.append(classIRI)
 
-                classIndex.append((classIRI, className))
-
-                # If there are multiple sentences only look at the first one
-                sentence = description.split(".")[0].replace('\n', ' ')
-                the_file.write(sentence + "." + '\n')
+                    # If there are multiple sentences only look at the first one
+                    sentence = description.split(".")[0].replace('\n', ' ')
+                    the_file.write(sentence + "." + '\n')
     return classIndex
 
 

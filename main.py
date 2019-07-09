@@ -1,5 +1,5 @@
 from flask import Flask
-app = Flask(__name__)
+
 
 import sys
 sys.path.append('lib/CAMR-Python3/')
@@ -19,12 +19,16 @@ from rdflib import Graph
 import requests
 import shutil
 
+from flask_cors import CORS
 
+app = Flask(__name__)
 UPLOAD_FOLDER = "temp/"
-ALLOWED_EXTENSIONS = set(['owl'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+CORS(app)
 
 globals.init()
+
+ALLOWED_EXTENSIONS = set(['owl'])
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -55,44 +59,6 @@ def check_ontology():
 
     response = {}
     response['source-urls'] = urls
-    return jsonify(response)
-
-@app.route('/get-sdd/', methods=['GET','POST'])
-def get_sdd():
-
-    chearid = {}
-    chearid['column'] = 'CHEARPID'
-    chearid['attribute'] = [{"value": "hasco:originalID", "confidence": 0.9}, {"value": "sio:Number", "confidence": 0.7}, {"value": "chear:Weight", "confidence": 0.25}]
-    chearid['attributeOf'] = [{"value": '??mother', "confidence": 0.85}, {"value": '??child', "confidence": 0.85}, {"value": '??birth', "confidence": 0.5}]
-
-    age = {}
-    age['column'] = 'age'
-    age['attribute'] = [{"value": "sio:Age", "confidence": 0.95}, {"value": "sio:Number", "confidence": 0.6}, {"value": "chear:Birth", "confidence": 0.2}]
-    age['attributeOf'] = [{"value": '??mother', "confidence": 0.85}, {"value": '??child', "confidence": 0.85}, {"value": '??birth', "confidence": 0.5}]
-    columns = [chearid, age]
-
-
-    prepregnancy = {}
-    prepregnancy['column'] = '??prepregnancy'
-    prepregnancy['entity'] = [{"value": "chear:PrePregnancy", "confidence": 0.8}, {"value": "chear:Pregnancy", "confidence": 0.7}, {"value": "chear:Birth", "confidence": 0.6}]
-
-    head = {}
-    head['column'] = '??head'
-    head['entity'] = [{"value": "uberon:0000033", "confidence": 1.0}, {"value": "chear:Pregnancy", "confidence": 0.2}, {"value": "chear:Weight", "confidence": 0.1}]
-    head['relation'] = [{"value": "sio:isPartOf", "confidence": 0.7}, {"value": "sio:isProperPartOf", "confidence": 0.7}, {"value": "sio:isLocatedIn", "confidence": 0.5}]
-    virtual_columns = [prepregnancy, head]
-
-    sheet = {}
-    sheet['columns'] = columns
-    sheet['virtual-columns'] = virtual_columns
-
-    sdd = {}
-    sdd['Dictionary Mapping'] = sheet
-
-    response = {}
-    response['N'] = 3
-    response['sdd'] = sdd
-
     return jsonify(response)
 
 @app.route('/upload/', methods=['GET', 'POST'])
@@ -307,3 +273,40 @@ def hello():
     message = {'content': 'Hello World!'}
 
     return render_template('home.html', head=head, message=message)
+
+@app.route('/get-sdd/', methods=['GET','POST'])
+def get_sdd():
+    chearid = {}
+    chearid['column'] = 'CHEARPID'
+    chearid['attribute'] = [{"value": "hasco:originalID", "confidence": 0.9}, {"value": "sio:Number", "confidence": 0.7}, {"value": "chear:Weight", "confidence": 0.25}]
+    chearid['attributeOf'] = [{"value": '??mother', "confidence": 0.85}, {"value": '??child', "confidence": 0.85}, {"value": '??birth', "confidence": 0.5}]
+
+    age = {}
+    age['column'] = 'age'
+    age['attribute'] = [{"value": "sio:Age", "confidence": 0.95}, {"value": "sio:Number", "confidence": 0.6}, {"value": "chear:Birth", "confidence": 0.2}]
+    age['attributeOf'] = [{"value": '??mother', "confidence": 0.85}, {"value": '??child', "confidence": 0.85}, {"value": '??birth', "confidence": 0.5}]
+    columns = [chearid, age]
+
+
+    prepregnancy = {}
+    prepregnancy['column'] = '??prepregnancy'
+    prepregnancy['entity'] = [{"value": "chear:PrePregnancy", "confidence": 0.8}, {"value": "chear:Pregnancy", "confidence": 0.7}, {"value": "chear:Birth", "confidence": 0.6}]
+
+    head = {}
+    head['column'] = '??head'
+    head['entity'] = [{"value": "uberon:0000033", "confidence": 1.0}, {"value": "chear:Pregnancy", "confidence": 0.2}, {"value": "chear:Weight", "confidence": 0.1}]
+    head['relation'] = [{"value": "sio:isPartOf", "confidence": 0.7}, {"value": "sio:isProperPartOf", "confidence": 0.7}, {"value": "sio:isLocatedIn", "confidence": 0.5}]
+    virtual_columns = [prepregnancy, head]
+
+    sheet = {}
+    sheet['columns'] = columns
+    sheet['virtual-columns'] = virtual_columns
+
+    sdd = {}
+    sdd['Dictionary Mapping'] = sheet
+
+    response = {}
+    response['N'] = 3
+    response['sdd'] = sdd
+
+    return jsonify(response)

@@ -5,31 +5,39 @@ To address this issue our team has created SDDGen a web service that automates t
 
 To form mappings SDDGen uses the Context-Specific Entity Embedding strategy developed in [2] to generate embeddings for ontology class descriptions and data dictionary definitions. Then within this new search space we find which ontology classes align best with SDD properties.
 
+## Requirements
+[python 3](https://www.python.org/download/releases/3.0/)
+[java 8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+[blazegraph](https://www.blazegraph.com/download/)
+
 ## Install
 ```
-// Clone Project
+# Clone Project
 git clone https://github.com/johnsm21/SDDGen.git
 
-// Create Virtual environment
+# Create Virtual environment
 cd SDDGen
 python3 -m venv env
 source env/bin/activate
 pip3 install -r requirements.txt
 
-// Install CAMR library
+# Install CAMR library
 cd lib
 git clone https://github.com/johnsm21/CAMR-Python3.git
 cd CAMR-Python3
 ./scripts/config.sh
 
-// Copy CAMR model into SDDGen/lib folder
+# Copy CAMR model into SDDGen/lib folder
 https://drive.google.com/file/d/1xI4CCYUodZ3b4amCV-8O7RuhwBz9nj-j/view?usp=sharing
 
-// Run Server
+# Run blazegraph
+java -server -Xmx4g -Dbigdata.propertyFile=RWStore.properties -jar blazegraph.jar
+
+# Run Server
 cd SDDGen
 FLASK_APP=main.py flask run
 
-// Break down Virtual environment
+# Break down Virtual environment
 deactivate
 ```
 ## References
