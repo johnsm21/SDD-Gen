@@ -13,7 +13,7 @@ To form mappings SDDGen uses the Context-Specific Entity Embedding strategy deve
 [blazegraph](https://www.blazegraph.com/download/)
 
 ## Install
-```
+``` bash
 # Clone Project
 git clone https://github.com/johnsm21/SDDGen.git
 
