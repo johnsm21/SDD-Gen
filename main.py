@@ -12,6 +12,7 @@ from flask import flash, request, redirect, url_for, render_template, jsonify
 from werkzeug.utils import secure_filename
 
 import ontology_pipeline
+import helper_function
 import view
 
 from rdflib import Graph
@@ -278,24 +279,26 @@ def hello():
 def get_sdd():
     chearid = {}
     chearid['column'] = 'CHEARPID'
-    chearid['attribute'] = [{"value": "hasco:originalID", "confidence": 0.9}, {"value": "sio:Number", "confidence": 0.7}, {"value": "chear:Weight", "confidence": 0.25}]
-    chearid['attributeOf'] = [{"value": '??mother', "confidence": 0.85}, {"value": '??child', "confidence": 0.85}, {"value": '??birth', "confidence": 0.5}]
+    chearid['attribute'] = helper_function.calcStars([{"value": "hasco:originalID", "confidence": 0.9}, {"value": "sio:Number", "confidence": 0.7}, {"value": "chear:Weight", "confidence": 0.25}])
+    chearid['attributeOf'] = helper_function.calcStars([{"value": '??mother', "confidence": 0.85}, {"value": '??child', "confidence": 0.85}, {"value": '??birth', "confidence": 0.5}])
+
+
 
     age = {}
     age['column'] = 'age'
-    age['attribute'] = [{"value": "sio:Age", "confidence": 0.95}, {"value": "sio:Number", "confidence": 0.6}, {"value": "chear:Birth", "confidence": 0.2}]
-    age['attributeOf'] = [{"value": '??mother', "confidence": 0.85}, {"value": '??child', "confidence": 0.85}, {"value": '??birth', "confidence": 0.5}]
+    age['attribute'] = helper_function.calcStars([{"value": "sio:Age", "confidence": 0.95}, {"value": "sio:Number", "confidence": 0.6}, {"value": "chear:Birth", "confidence": 0.2}])
+    age['attributeOf'] = helper_function.calcStars([{"value": '??mother', "confidence": 0.85}, {"value": '??child', "confidence": 0.85}, {"value": '??birth', "confidence": 0.5}])
     columns = [chearid, age]
 
 
     prepregnancy = {}
     prepregnancy['column'] = '??prepregnancy'
-    prepregnancy['entity'] = [{"value": "chear:PrePregnancy", "confidence": 0.8}, {"value": "chear:Pregnancy", "confidence": 0.7}, {"value": "chear:Birth", "confidence": 0.6}]
+    prepregnancy['entity'] = helper_function.calcStars([{"value": "chear:PrePregnancy", "confidence": 0.8}, {"value": "chear:Pregnancy", "confidence": 0.7}, {"value": "chear:Birth", "confidence": 0.6}])
 
     head = {}
     head['column'] = '??head'
-    head['entity'] = [{"value": "uberon:0000033", "confidence": 1.0}, {"value": "chear:Pregnancy", "confidence": 0.2}, {"value": "chear:Weight", "confidence": 0.1}]
-    head['relation'] = [{"value": "sio:isPartOf", "confidence": 0.7}, {"value": "sio:isProperPartOf", "confidence": 0.7}, {"value": "sio:isLocatedIn", "confidence": 0.5}]
+    head['entity'] = helper_function.calcStars([{"value": "uberon:0000033", "confidence": 1.0}, {"value": "chear:Pregnancy", "confidence": 0.2}, {"value": "chear:Weight", "confidence": 0.1}])
+    head['relation'] = helper_function.calcStars([{"value": "sio:isPartOf", "confidence": 0.7}, {"value": "sio:isProperPartOf", "confidence": 0.7}, {"value": "sio:isLocatedIn", "confidence": 0.5}])
     virtual_columns = [prepregnancy, head]
 
     sheet = {}

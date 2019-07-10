@@ -335,5 +335,4 @@ def loadQuad(blazegraphURL, quadnamespace, file, namespace):
 
     headers = {'Content-Type': 'application/xml',}
     response = requests.post(blazegraphURL + "/blazegraph/dataloader", headers=headers, data=data)
-    print(response)
     return (response.status_code == 201) or (response.status_code == 200)
