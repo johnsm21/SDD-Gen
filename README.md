@@ -14,6 +14,11 @@ To form mappings SDDGen uses the Context-Specific Entity Embedding strategy deve
 
 ## Install
 ``` bash
+# Install dependencies
+apt-get install unzip
+apt-get install python3-venv
+apt-get install python3-dev
+
 # Clone Project
 git clone https://github.com/johnsm21/SDDGen.git
 

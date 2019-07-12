@@ -123,9 +123,9 @@ def getFullyInstalledOntologies():
         exsits = sparql.query().convert()
 
         if graphName in globals.ontoInProgress.keys():
-            ontologies.append((getPrefixCC(baseUri), baseUri, version, exsits["boolean"], globals.ontoInProgress[graphName]));
+            ontologies.append((getPrefixCC(baseUri), baseUri, version, exsits["boolean"], globals.ontoInProgress[graphName]), ontGraph);
         else:
-            ontologies.append((getPrefixCC(baseUri), baseUri, version, exsits["boolean"], True));
+            ontologies.append((getPrefixCC(baseUri), baseUri, version, exsits["boolean"], True, ontGraph));
 
     return ontologies
 

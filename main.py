@@ -8,12 +8,13 @@ import globals
 import amr_parsing
 import os
 
-from flask import flash, request, redirect, url_for, render_template, jsonify
+from flask import flash, request, redirect, url_for, render_template, jsonify, make_response
 from werkzeug.utils import secure_filename
 
 import ontology_pipeline
 import helper_function
 import view
+import sdd_aligner
 
 from rdflib import Graph
 
@@ -21,6 +22,7 @@ import requests
 import shutil
 
 from flask_cors import CORS
+from sdd_generator import SDD
 
 app = Flask(__name__)
 UPLOAD_FOLDER = "temp/"
@@ -220,9 +222,91 @@ def load_ontology():
 
 @app.route('/populate-sdd', methods=['POST'])
 def populate_sdd():
-    req_data = request.get_json()
-    print(req_data)
 
+    # Parse Input
+    req_data = request.get_json()
+    if 'N' not in req_data:
+        print('Bad Request: N must be defined')
+        return make_response(jsonify({'Bad Request': 'N must be defined'}), 400)
+
+    if 'data-dictionary' not in req_data:
+        print('Bad Request: data-dictionary must be defined')
+        return make_response(jsonify({'Bad Request': 'data-dictionary must be defined'}), 400)
+
+    if 'source-urls' not in req_data:
+        print('Bad Request: data-dictionary source-urls must be defined')
+        return make_response(jsonify({'Bad Request': 'data-dictionary source-urls must be defined'}), 400)
+
+    numResults = req_data['N']
+    dataDict = req_data['data-dictionary']
+    ontologies = req_data['source-urls']
+
+    if type(numResults) is not int:
+        print('Bad Request: N must be an int')
+        return make_response(jsonify({'Bad Request': 'N must be an int'}), 400)
+
+    if numResults < 1:
+        print('Bad Request: N must be greater than 0')
+        return make_response(jsonify({'Bad Request': 'N must be greater than 0'}), 400)
+
+    if type(dataDict) is not list:
+        print('Bad Request: data-dictionary must be a list of dictionaries')
+        return make_response(jsonify({'Bad Request': 'data-dictionary must be a list of dictionaries'}), 400)
+
+    if len(dataDict) == 0:
+        print('Bad Request: data-dictionary must not be empty')
+        return make_response(jsonify({'Bad Request': 'data-dictionary must not be empty'}), 400)
+
+    for i in dataDict:
+        if type(i) is not dict:
+            print('Bad Request: data-dictionary must contain dictionaries')
+            return make_response(jsonify({'Bad Request': 'data-dictionary must contain dictionaries'}), 400)
+
+        if 'column' not in i:
+            print('Bad Request: data-dictionary dictionaries must contain a column name')
+            return make_response(jsonify({'Bad Request': 'data-dictionary dictionaries must contain a column name'}), 400)
+
+        if type(i['column']) is not str:
+            print('Bad Request: data-dictionary dictionaries column name must be a string')
+            return make_response(jsonify({'Bad Request': 'data-dictionary dictionaries column name must be a string'}), 400)
+
+        if 'description' not in i:
+            print('Bad Request: data-dictionary dictionaries must contain a column description')
+            return make_response(jsonify({'Bad Request': 'data-dictionary dictionaries must contain a column description'}), 400)
+
+        if type(i['description']) is not str:
+            print('Bad Request: data-dictionary dictionaries column description must be a string')
+            return make_response(jsonify({'Bad Request': 'data-dictionary dictionaries column description must be a string'}), 400)
+
+
+    if type(ontologies) is not list:
+        print('Bad Request: ontologies must be a list of ontologies')
+        return make_response(jsonify({'Bad Request': 'ontologies must be a list of ontologies'}), 400)
+
+    if len(ontologies) == 0:
+        print('Bad Request: ontologies must be not be empty')
+        return make_response(jsonify({'Bad Request': 'ontologies must be not be empty'}), 400)
+
+    for i in ontologies:
+        if type(i) is not str:
+            print('Bad Request: ontologies must contain strings')
+            return make_response(jsonify({'Bad Request': 'ontologies must contain strings'}), 400)
+
+
+    graphNames = []
+    onts = view.getFullyInstalledOntologies()
+    for ont in onts:
+        if ont[3] and ont[4]: # check if its installed
+            if ont[1] in ontologies: # check if we need it
+                graphNames.append(ont[5])
+
+    if len(graphNames) != len(ontologies):
+        print('Bad Request: missing ontology')
+        return make_response(jsonify({'Bad Request': 'missing ontology'}), 400)
+
+    results = SDD(ontologies)
+    results = sdd_aligner.labelMatch(results, numResults, dataDict, graphNames)
+    print(results.sdd)
 
     urls = []
     response = {}
