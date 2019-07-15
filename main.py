@@ -304,7 +304,7 @@ def populate_sdd():
         print('Bad Request: missing ontology')
         return make_response(jsonify({'Bad Request': 'missing ontology'}), 400)
 
-    results = SDD(ontologies)
+    results = SDD(ontologies, sioLabels = True)
     results = sdd_aligner.labelMatch(results, numResults, dataDict, graphNames)
     print(results.sdd)
 

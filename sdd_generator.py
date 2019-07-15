@@ -1,12 +1,14 @@
 import view
+import helper_function
 
 class SDD:
     """A class that programmatically builds a Semantic Data Dictionary"""
 
     sdd = {}
     prefixes = {}
+    sioLabels = False
 
-    def __init__(self, graphs):
+    def __init__(self, graphs, sioLabels = False):
         # Init prefix mapping
         p_sheet = []
         for g in graphs:
@@ -22,8 +24,16 @@ class SDD:
         dm_sheet['columns'] = []
         dm_sheet['virtual-columns'] = []
         self.sdd['Dictionary Mapping'] = dm_sheet
+        self.sioLabels = sioLabels
 
     def __reduceIRI(self, iri):
+
+        # check for sio Labels
+        if self.sioLabels :
+            sioIRI = 'http://semanticscience.org/resource/'
+            if sioIRI in iri:
+                iri = helper_function.getSioLabel(iri)
+
         for prefixIri, prefix in self.prefixes.items():
             if prefixIri in iri:
                 return iri.replace(prefixIri, prefix + ':')

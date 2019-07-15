@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import stats
 from operator import itemgetter
+from SPARQLWrapper import SPARQLWrapper, JSON
 
 
 # listODict [{"value": "hasco:originalID", "confidence": 0.9}, {"value": "sio:Number", "confidence": 0.7}, {"value": "chear:Weight", "confidence": 0.25}]
@@ -62,3 +63,37 @@ def distToConf(distArray):
     maxDist = max(distArray,key=itemgetter(1))[1]
     distArray = list(map(lambda i: (i[0], ((-1*i[1]) + maxDist)/maxDist), distArray))
     return distArray
+
+def getSioLabel(sioIri):
+    base_url = "http://localhost:9999"
+    namespace = "mapper"
+    sparql = SPARQLWrapper(base_url + "/blazegraph/namespace/" + namespace + "/sparql")
+    sparql.setReturnFormat(JSON)
+    sparql.setQuery("""
+        select ?label ?type
+        where{
+          <%s> rdfs:label ?label ;
+             a  ?type .
+        }
+        """ % sioIri)
+    results = sparql.query().convert()
+
+    for result in results["results"]["bindings"]:
+        label = result["label"]["value"]
+        type = result["type"]["value"]
+
+        labelParts = label.split()
+        print('label = ' + label)
+        print('type = ' + type)
+        if type == 'http://www.w3.org/2002/07/owl#Class':
+            labelParts[0] = labelParts[0][0].capitalize()+labelParts[0][1:]
+        iri = 'http://semanticscience.org/resource/' + labelParts[0]
+
+        if len(labelParts) > 1:
+            for i in labelParts[1:]:
+                if i.startswith('(') and i.endswith(')'):
+                    iri = iri + i[1:-1]
+                else:
+                    iri = iri + i[0].capitalize()+i[1:]
+
+        return iri
