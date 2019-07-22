@@ -2,6 +2,28 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 import jellyfish
 import helper_function
 
+
+def semanticLabelMatch(results, n, dataDict, graphs):
+    # get all classes and IRIs
+    classNames = getClassNames(graphs)
+
+    for dict in dataDict:
+        ddlabel = dict['column'].lower()
+        distArray = []
+        for iri, labelArray in classNames.items():
+            for label in labelArray:
+                d = jellyfish.levenshtein_distance(ddlabel, label.lower())
+                distArray.append((iri, d))
+
+        distArray = helper_function.distToConf(distArray)
+        distArray = sorted(distArray, key=lambda x: x[1], reverse=True)
+        distArray = helper_function.calcArrayStars(distArray)
+        # print(distArray[0:n])
+
+        results.addDMColumn(dict['column'], attribute = distArray[0:n])
+
+    return results
+
 def labelMatch(results, n, dataDict, graphs):
     # get all classes and IRIs
     classNames = getClassNames(graphs)
@@ -17,9 +39,20 @@ def labelMatch(results, n, dataDict, graphs):
         distArray = helper_function.distToConf(distArray)
         distArray = sorted(distArray, key=lambda x: x[1], reverse=True)
         distArray = helper_function.calcArrayStars(distArray)
-        print(distArray[0:n])
 
-        results.addDMColumn(dict['column'], attribute = distArray[0:n])
+        # Add N uniques IRIs
+        distResult = []
+        iris = []
+        for dist in distArray:
+            if dist[0] not in iris:
+                distResult.append(dist)
+                iris.append(dist[0])
+                if len(distResult) == n:
+                    break;
+
+        # print(distResult)
+
+        results.addDMColumn(dict['column'], attribute = distResult)
 
     return results
 
@@ -47,6 +80,7 @@ def getClassNames(graphs):
             if classIri not in classNames:
                 classNames[classIri] = [label]
             else:
-                classNames[classIri].append(label)
+                if label not in classNames[classIri]:
+                    classNames[classIri].append(label)
 
     return classNames

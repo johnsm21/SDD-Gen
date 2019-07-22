@@ -24,6 +24,9 @@ import shutil
 from flask_cors import CORS
 from sdd_generator import SDD
 
+import datetime
+import json
+
 app = Flask(__name__)
 UPLOAD_FOLDER = "temp/"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -32,6 +35,8 @@ CORS(app)
 globals.init()
 
 ALLOWED_EXTENSIONS = set(['owl'])
+
+algorithms = ['string-dist']
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -219,23 +224,18 @@ def load_ontology():
     response['source-urls'] = urls
     return jsonify(response)
 
-
-@app.route('/populate-sdd', methods=['POST'])
-def populate_sdd():
-
-    # Parse Input
-    req_data = request.get_json()
+def checkDDRequest(req_data):
     if 'N' not in req_data:
         print('Bad Request: N must be defined')
-        return make_response(jsonify({'Bad Request': 'N must be defined'}), 400)
+        return 'N must be defined'
 
     if 'data-dictionary' not in req_data:
         print('Bad Request: data-dictionary must be defined')
-        return make_response(jsonify({'Bad Request': 'data-dictionary must be defined'}), 400)
+        return 'data-dictionary must be defined'
 
     if 'source-urls' not in req_data:
         print('Bad Request: data-dictionary source-urls must be defined')
-        return make_response(jsonify({'Bad Request': 'data-dictionary source-urls must be defined'}), 400)
+        return 'data-dictionary source-urls must be defined'
 
     numResults = req_data['N']
     dataDict = req_data['data-dictionary']
@@ -243,55 +243,71 @@ def populate_sdd():
 
     if type(numResults) is not int:
         print('Bad Request: N must be an int')
-        return make_response(jsonify({'Bad Request': 'N must be an int'}), 400)
+        return 'N must be an int'
 
     if numResults < 1:
         print('Bad Request: N must be greater than 0')
-        return make_response(jsonify({'Bad Request': 'N must be greater than 0'}), 400)
+        return 'N must be greater than 0'
 
     if type(dataDict) is not list:
         print('Bad Request: data-dictionary must be a list of dictionaries')
-        return make_response(jsonify({'Bad Request': 'data-dictionary must be a list of dictionaries'}), 400)
+        return 'data-dictionary must be a list of dictionaries'
 
     if len(dataDict) == 0:
         print('Bad Request: data-dictionary must not be empty')
-        return make_response(jsonify({'Bad Request': 'data-dictionary must not be empty'}), 400)
+        return 'data-dictionary must not be empty'
 
     for i in dataDict:
         if type(i) is not dict:
             print('Bad Request: data-dictionary must contain dictionaries')
-            return make_response(jsonify({'Bad Request': 'data-dictionary must contain dictionaries'}), 400)
+            return 'data-dictionary must contain dictionaries'
 
         if 'column' not in i:
             print('Bad Request: data-dictionary dictionaries must contain a column name')
-            return make_response(jsonify({'Bad Request': 'data-dictionary dictionaries must contain a column name'}), 400)
+            return 'data-dictionary dictionaries must contain a column name'
 
         if type(i['column']) is not str:
             print('Bad Request: data-dictionary dictionaries column name must be a string')
-            return make_response(jsonify({'Bad Request': 'data-dictionary dictionaries column name must be a string'}), 400)
+            return 'data-dictionary dictionaries column name must be a string'
 
         if 'description' not in i:
             print('Bad Request: data-dictionary dictionaries must contain a column description')
-            return make_response(jsonify({'Bad Request': 'data-dictionary dictionaries must contain a column description'}), 400)
+            return 'data-dictionary dictionaries must contain a column description'
 
         if type(i['description']) is not str:
             print('Bad Request: data-dictionary dictionaries column description must be a string')
-            return make_response(jsonify({'Bad Request': 'data-dictionary dictionaries column description must be a string'}), 400)
-
+            return 'data-dictionary dictionaries column description must be a string'
 
     if type(ontologies) is not list:
         print('Bad Request: ontologies must be a list of ontologies')
-        return make_response(jsonify({'Bad Request': 'ontologies must be a list of ontologies'}), 400)
+        return 'ontologies must be a list of ontologies'
 
     if len(ontologies) == 0:
         print('Bad Request: ontologies must be not be empty')
-        return make_response(jsonify({'Bad Request': 'ontologies must be not be empty'}), 400)
+        return 'ontologies must be not be empty'
 
     for i in ontologies:
         if type(i) is not str:
             print('Bad Request: ontologies must contain strings')
-            return make_response(jsonify({'Bad Request': 'ontologies must contain strings'}), 400)
+            return 'ontologies must contain strings'
 
+    return (numResults, dataDict, ontologies)
+
+
+@app.route('/populate-sdd', methods=['POST'])
+def populate_sdd():
+
+    # Parse Input
+    req_data = request.get_json()
+
+    print(req_data)
+
+    parsed = checkDDRequest(req_data)
+
+    if isinstance(parsed, str):
+        return make_response(jsonify({'Bad Request': parsed}), 400)
+    else:
+        (numResults, dataDict, ontologies) = parsed
 
     graphNames = []
     onts = view.getFullyInstalledOntologies()
@@ -308,9 +324,88 @@ def populate_sdd():
     results = sdd_aligner.labelMatch(results, numResults, dataDict, graphNames)
     print(results.sdd)
 
-    urls = []
     response = {}
-    response['source-urls'] = urls
+    response['sdd'] = results.sdd
+    return jsonify(response)
+
+def checkTestRequest(req_data):
+    data_path = 'data'
+    if 'algorithm' not in req_data:
+        return 'Missing algorithm'
+
+    if type(req_data['algorithm']) is not str:
+        return 'Algorithm must be a string'
+
+    if 'ground-truth' not in req_data:
+        return 'Missing ground truth'
+
+    if type(req_data['ground-truth']) is not str:
+        return 'Ground truth must be a path'
+
+    gtPath = data_path + os.path.sep + req_data['ground-truth']
+    if not os.path.exists(gtPath):
+        return 'Ground truth must be a path to an sdd'
+
+    if req_data['algorithm'] not in algorithms:
+        return 'Unkown algorithm'
+
+    tstPath = data_path  + os.path.sep + 'rpi' + os.path.sep + req_data['algorithm'] + '-test' + os.path.sep + datetime.datetime.now().strftime("%Y-%m-%d")
+
+    return (gtPath, tstPath)
+
+
+
+@app.route('/test-sdd', methods=['POST'])
+def test_sdd():
+    test_path = 'data'
+
+    # Parse Input
+    req_data = request.get_json()
+
+    # Parse Arguments
+    parsed = checkTestRequest(req_data)
+    if isinstance(parsed, str):
+        return make_response(jsonify({'Bad Request': parsed}), 400)
+    else:
+        (gtPath, tstPath) = parsed
+
+    parsed = checkDDRequest(req_data)
+    if isinstance(parsed, str):
+        return make_response(jsonify({'Bad Request': parsed}), 400)
+    else:
+        (numResults, dataDict, ontologies) = parsed
+
+    graphNames = []
+    onts = view.getFullyInstalledOntologies()
+    for ont in onts:
+        if ont[3] and ont[4]: # check if its installed
+            if ont[1] in ontologies: # check if we need it
+                graphNames.append(ont[5])
+
+    if len(graphNames) != len(ontologies):
+        print('Bad Request: missing ontology')
+        return make_response(jsonify({'Bad Request': 'missing ontology'}), 400)
+
+    # Create test folder
+    if not os.path.exists(tstPath):
+        os.makedirs(tstPath)
+
+    with open(tstPath + os.path.sep + 'request.json', 'w') as outfile:
+        json.dump(req_data, outfile, indent=4, sort_keys=True)
+
+    results = SDD(ontologies, sioLabels = True)
+    results = sdd_aligner.labelMatch(results, numResults, dataDict, graphNames)
+
+    errors = results.generateAcc(gtPath)
+    if isinstance(errors, str):
+        return make_response(jsonify({'Bad Request': errors}), 400)
+
+
+    with open(tstPath + os.path.sep + 'result.json', 'w') as outfile:
+        json.dump(results.sdd, outfile, indent=4, sort_keys=True)
+
+    response = {}
+    response['sdd'] = results.sdd
     return jsonify(response)
 
 @app.route('/json-example', methods=['POST']) #GET requests will be blocked

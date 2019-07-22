@@ -12,10 +12,14 @@ class SDD:
         # Init prefix mapping
         p_sheet = []
         for g in graphs:
+            if not (g[-1] == '/') or (g[-1] == '#'):
+                g = g + '#' # We assume were # IRI if were missing a trailing character
+
             self.prefixes[g] = view.getPrefixCC(g)
             row = {}
             row["Prefix"] = self.prefixes[g]
             row["URI"] = g
+
             p_sheet.append(row)
         self.sdd['Prefixes'] = p_sheet
 
@@ -39,6 +43,23 @@ class SDD:
                 return iri.replace(prefixIri, prefix + ':')
         return iri
 
+    def generateAcc(self, sddGT):
+        [gt_columns, gt_vcolumns] = helper_function.sdd_loader(sddGT)
+        # print('schema_data = ' + str(gt_columns))
+        # print('entity_data = ' + str(gt_vcolumns))
+
+        attributeCorrect = 0
+        total = 0
+        for column in self.sdd['Dictionary Mapping']['columns']:
+            if column['column'] in gt_columns:
+                total = total + 1
+                for attribute in column['attribute']:
+                    if gt_columns[column['column']]['Attribute'] == attribute['value']:
+                        attributeCorrect = attributeCorrect + 1
+                        break    # We only count it once
+        attributeCorrect = (attributeCorrect * 100) / len(self.sdd['Dictionary Mapping']['columns'])
+        self.sdd['Accuracy'] = {'attribute': attributeCorrect}
+        return None
 
     # Assuming [(IRI, conf, star), ]
     def addDMColumn(self, column, attribute = None, attributeOf = None, unit = None, time = None, entity = None, role = None, relation = None, inRelationTo = None, wasDerivedFrom = None, wasGeneratedBy = None):
