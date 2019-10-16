@@ -7,6 +7,7 @@ sys.path.append('lib/CAMR-Python3/')
 import globals
 import amr_parsing
 import os
+import glove
 
 from flask import flash, request, redirect, url_for, render_template, jsonify, make_response
 from werkzeug.utils import secure_filename
@@ -37,6 +38,11 @@ globals.init()
 ALLOWED_EXTENSIONS = set(['owl'])
 
 algorithms = ['string-dist']
+
+print("Loading Glove Vectors...")
+# gloveVect = glove.loadGlove(globals.glove_path)
+
+print("Server Ready!")
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -394,7 +400,8 @@ def test_sdd():
         json.dump(req_data, outfile, indent=4, sort_keys=True)
 
     results = SDD(ontologies, sioLabels = True)
-    results = sdd_aligner.labelMatch(results, numResults, dataDict, graphNames)
+    # results = sdd_aligner.labelMatch(results, numResults, dataDict, graphNames)
+    results = sdd_aligner.descriptionMatch(results, numResults, dataDict, graphNames)
 
     errors = results.generateAcc(gtPath)
     if isinstance(errors, str):

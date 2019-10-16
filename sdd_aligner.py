@@ -56,6 +56,15 @@ def labelMatch(results, n, dataDict, graphs):
 
     return results
 
+
+def descriptionMatch(results, n, dataDict, graphs):
+    print(results)
+    print(n)
+    print(dataDict)
+    print(graphs)
+    return results
+
+
 def getClassNames(graphs):
     # setup sparql endpoint
     base_url = "http://localhost:9999"
