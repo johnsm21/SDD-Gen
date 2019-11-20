@@ -10,7 +10,7 @@ itsdangerous==1.1.0
 jellyfish==0.7.2
 Jinja2==2.10.1
 MarkupSafe==1.1.1
-nltk==3.4.1
+nltk==3.4.5
 numpy==1.16.3
 pexpect==4.7.0
 protobuf==3.7.1
