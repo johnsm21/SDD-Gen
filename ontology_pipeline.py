@@ -62,16 +62,23 @@ def ingest(file):
        }""")
 
     for row in res:
+
         ontology = str(row.onto)
-        version = str(row.ver)
-        versionIRI = str(row.verIRI)
+        version = row.ver
+        versionIRI = row.verIRI
+        print('Here ontology = ' + str(ontology))
+        print('Here versionIRI = ' + str(versionIRI))
+        print('Here version = ' + str(version))
     g = None # Release resources
 
     if versionIRI is None:
         if version is None:
             version = '1.0'
+        else:
+            version = str(version)
         base_graph_namespace = ontology + "/" + version
     else:
+        versionIRI = str(versionIRI)
         base_graph_namespace = versionIRI
 
     print('base_graph_namespace = ' + str(base_graph_namespace))

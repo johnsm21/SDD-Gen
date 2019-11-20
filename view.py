@@ -49,8 +49,8 @@ def getInstalledOntologies():
             else:
                 version = '1.0'
 
-        if "perfer" in result:
-            baseUri = result["perfer"]["value"]
+        # if "perfer" in result:
+            # baseUri = result["perfer"]["value"]
 
 
         ontologies.append((getPrefixCC(baseUri), baseUri, version));
@@ -100,8 +100,8 @@ def getFullyInstalledOntologies():
             else:
                 version = '1.0'
 
-        if "perfer" in result:
-            baseUri = result["perfer"]["value"]
+        # if "perfer" in result:
+        #     baseUri = result["perfer"]["value"]
 
         # check if we have the corresponding amr graph
         ontGraph = result["g"]["value"]

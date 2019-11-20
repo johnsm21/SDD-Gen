@@ -35,12 +35,12 @@ CORS(app)
 
 globals.init()
 
-ALLOWED_EXTENSIONS = set(['owl'])
+ALLOWED_EXTENSIONS = set(['owl', 'ttl'])
 
 algorithms = ['string-dist']
 
 print("Loading Glove Vectors...")
-# gloveVect = glove.loadGlove(globals.glove_path)
+gloveVect = glove.loadGlove(globals.glove_path)
 
 print("Server Ready!")
 
@@ -317,17 +317,36 @@ def populate_sdd():
 
     graphNames = []
     onts = view.getFullyInstalledOntologies()
+
+    # print('onts: ' + str(onts))
+    # print('ontologies: ' + str(ontologies))
+
+    found = []
     for ont in onts:
-        if ont[3] and ont[4]: # check if its installed
+        # if ont[3] and ont[4]: # check if its installed
+        if ont[4]: # Only check for in database
             if ont[1] in ontologies: # check if we need it
+                found.append(ont[1])
                 graphNames.append(ont[5])
+
+    # print('graphNames = ' + str(graphNames))
 
     if len(graphNames) != len(ontologies):
         print('Bad Request: missing ontology')
-        return make_response(jsonify({'Bad Request': 'missing ontology'}), 400)
+
+        def Diff(li1, li2):
+            return (list(set(li1) - set(li2)))
+        missing = Diff(ontologies, found)
+        print('missing = ' + str(missing))
+
+        return make_response(jsonify(
+        {   'Bad Request': 'missing ontology',
+            'Miss': missing
+        }), 400)
 
     results = SDD(ontologies, sioLabels = True)
-    results = sdd_aligner.labelMatch(results, numResults, dataDict, graphNames)
+    results = sdd_aligner.semanticLabelMatch(results, numResults, dataDict, graphNames, gloveVect)
+    # results = sdd_aligner.labelMatch(results, numResults, dataDict, graphNames)
     print(results.sdd)
 
     response = {}
