@@ -2,7 +2,22 @@ import globals
 import requests
 from SPARQLWrapper import SPARQLWrapper, JSON
 
-prefixMap = {}
+prefixMap = {
+'http://hadatac.org/ont/chear':                 'chear',
+'http://hadatac.org/chear/hasco/':              'hasco',
+'http://hadatac.org/ont/lesa':                  'lesa',
+'http://hadatac.org/ont/vstoi':                 'vstoi',
+'http://purl.obolibrary.org/obo/envo.owl':      'envo',
+'http://purl.obolibrary.org/obo/pato.owl':      'pato',
+'http://purl.obolibrary.org/obo/uo.owl':        'uo',
+'http://semanticscience.org/ontology/sio.owl':  'sio',
+'http://www.w3.org/1999/02/22-rdf-syntax-ns#':  'rdf',
+'http://www.w3.org/2000/01/rdf-schema#':        'rdfs',
+'http://www.w3.org/2002/07/owl':                'owl',
+'http://www.w3.org/ns/prov-o#':                 'provo',
+'http://purl.obolibrary.org/obo/chebi.owl':     'chebi',
+'http://www.w3.org/ns/prov#':                   'prov'
+}
 
 def getInstalledOntologies():
     base_url = "http://localhost:9999"
