@@ -147,7 +147,7 @@ def getFullyInstalledOntologies():
 def getPrefixCC(url):
 
     if url not in prefixMap.keys():
-        print("Had to look up")
+        print("Had to look up: " + str(url))
         response = requests.get('https://prefix.cc/', params={'q': url})
 
         if(response.status_code == 201):

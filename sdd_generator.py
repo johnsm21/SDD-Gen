@@ -12,12 +12,16 @@ class SDD:
         # Init prefix mapping
         p_sheet = []
         for g in graphs:
+            row = {}
+
+            self.prefixes[g] = view.getPrefixCC(g)
+            row["Prefix"] = self.prefixes[g]
+            
             if not (g[-1] == '/') or (g[-1] == '#'):
                 g = g + '#' # We assume were # IRI if were missing a trailing character
 
-            self.prefixes[g] = view.getPrefixCC(g)
-            row = {}
-            row["Prefix"] = self.prefixes[g]
+
+
             row["URI"] = g
 
             p_sheet.append(row)
