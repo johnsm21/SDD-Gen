@@ -16,7 +16,7 @@ class SDD:
 
             self.prefixes[g] = view.getPrefixCC(g)
             row["Prefix"] = self.prefixes[g]
-            
+
             if not (g[-1] == '/') or (g[-1] == '#'):
                 g = g + '#' # We assume were # IRI if were missing a trailing character
 
@@ -74,7 +74,7 @@ class SDD:
             col['attribute'] = []
             for i in attribute:
                 rslt = {}
-                rslt["value"] = self.__reduceIRI(i[0])
+                rslt["value"] = i[0] # self.__reduceIRI(i[0])
                 rslt["confidence"] = i[1]
                 rslt["star"] = i[2]
                 col['attribute'].append(rslt)
@@ -92,7 +92,7 @@ class SDD:
             col['Unit'] = []
             for i in unit:
                 rslt = {}
-                rslt["value"] = self.__reduceIRI(i[0])
+                rslt["value"] = i[0] # self.__reduceIRI(i[0])
                 rslt["confidence"] = i[1]
                 rslt["star"] = i[2]
                 col['Unit'].append(rslt)
@@ -110,7 +110,7 @@ class SDD:
             col['Entity'] = []
             for i in entity:
                 rslt = {}
-                rslt["value"] = self.__reduceIRI(i[0])
+                rslt["value"] = i[0] # self.__reduceIRI(i[0])
                 rslt["confidence"] = i[1]
                 rslt["star"] = i[2]
                 col['Entity'].append(rslt)
@@ -119,7 +119,7 @@ class SDD:
             col['Role'] = []
             for i in role:
                 rslt = {}
-                rslt["value"] = self.__reduceIRI(i[0])
+                rslt["value"] = i[0] # self.__reduceIRI(i[0])
                 rslt["confidence"] = i[1]
                 rslt["star"] = i[2]
                 col['Role'].append(rslt)
@@ -128,7 +128,7 @@ class SDD:
             col['Relation'] = []
             for i in relation:
                 rslt = {}
-                rslt["value"] = self.__reduceIRI(i[0])
+                rslt["value"] = i[0] #self.__reduceIRI(i[0])
                 rslt["confidence"] = i[1]
                 rslt["star"] = i[2]
                 col['Relation'].append(rslt)
@@ -155,7 +155,7 @@ class SDD:
             col['wasGeneratedBy'] = []
             for i in wasGeneratedBy:
                 rslt = {}
-                rslt["value"] = self.__reduceIRI(i[0])
+                rslt["value"] = i[0] # self.__reduceIRI(i[0])
                 rslt["confidence"] = i[1]
                 rslt["star"] = i[2]
                 col['wasGeneratedBy'].append(rslt)

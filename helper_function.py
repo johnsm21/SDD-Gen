@@ -60,6 +60,19 @@ def calcArrayStars(listOfTuple):
 
     return listOfTriple
 
+
+def fakeStars(listOfTuple):
+
+    # remove duplicates and add fake stars
+    listOfTriple = []
+    iris = []
+    for i in listOfTuple:
+        if i[0] not in iris:
+            iris.append(i[0])
+            listOfTriple.append((i[0], i[1], round(i[1], 2)))
+
+    return listOfTriple
+
 def distToConf(distArray):
     maxDist = max(distArray,key=itemgetter(1))[1]
     distArray = list(map(lambda i: (i[0], ((-1*i[1]) + maxDist)/maxDist), distArray))

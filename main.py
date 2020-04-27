@@ -318,16 +318,25 @@ def populate_sdd():
     graphNames = []
     onts = view.getFullyInstalledOntologies()
 
-    # print('onts: ' + str(onts))
+    #print('onts: ' + str(onts))
     # print('ontologies: ' + str(ontologies))
 
     found = []
-    for ont in onts:
-        # if ont[3] and ont[4]: # check if its installed
-        if ont[4]: # Only check for in database
-            if ont[1] in ontologies: # check if we need it
-                found.append(ont[1])
-                graphNames.append(ont[5])
+    # for ont in onts:
+    #     # if ont[3] and ont[4]: # check if its installed
+    #     if ont[4]: # Only check for in database
+    #         if ont[1] in ontologies: # check if we need it
+    #             found.append(ont[1])
+    #             graphNames.append(ont[5])
+
+    # Get the SDDGen graph names for the ontologies, these are the ontology iris with versioning info
+    for ontIn in ontologies:
+        for storedOnt in onts:
+            if ontIn == storedOnt[1]: # graph IRI match
+                if storedOnt[4]: # Check if installed in database
+                    found.append(storedOnt[1])
+                    graphNames.append(storedOnt[5])
+                break # we found the ontology no need to keep looking
 
     # print('graphNames = ' + str(graphNames))
 
@@ -345,8 +354,10 @@ def populate_sdd():
         }), 400)
 
     results = SDD(ontologies, sioLabels = True)
-    results = sdd_aligner.semanticLabelMatch(results, numResults, dataDict, graphNames, gloveVect)
+    results = sdd_aligner.semanticLabelMatchWithOntoPriority(results, numResults, dataDict, graphNames, gloveVect)
+    # results = sdd_aligner.semanticLabelMatch(results, numResults, dataDict, graphNames, gloveVect)
     # results = sdd_aligner.labelMatch(results, numResults, dataDict, graphNames)
+
     print(results.sdd)
 
     response = {}

@@ -2,6 +2,50 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 import jellyfish
 import helper_function
 import numpy as np
+from scipy import spatial
+
+
+def semanticLabelMatchWithOntoPriority(results, n, dataDict, graphs, gloveVect):
+    pMod = 0.8
+
+    slope = (pMod - 1)/(len(graphs)-1) # (1-pMod)/len(graphs)
+    # weights = [ (slope*x) + 1 for x in range(len(graphs))]
+
+    for dict in dataDict:
+        ddlabel = dict['column'].lower()
+
+        distArray = []
+        if ddlabel in gloveVect:
+            ddVect = gloveVect[ddlabel]
+            for i in range(len(graphs)):
+                weight = (slope*i) + 1
+                classNames = getClassNames([graphs[i]])
+                for iri, labelArray in classNames.items():
+                    for label in labelArray:
+                        if label.lower() in gloveVect:
+                            labelVect = gloveVect[label.lower()]
+                            d = ((1.0 - spatial.distance.cosine(ddVect, labelVect)) + 1.0)/2.0
+                            d = d * weight
+
+                            if d > 0.7:
+                            # || a - b||
+                            # d = np.linalg.norm(ddVect - labelVect)
+                                distArray.append((iri, d))
+
+            # distArray = helper_function.distToConf(distArray)
+            distArray = sorted(distArray, key=lambda x: x[1], reverse=True)
+            distArray = helper_function.fakeStars(distArray)
+
+
+        size = min([len(distArray), n])
+
+        # print('ddlabel = ' + str(ddlabel))
+        # print('distArray = ' + str(distArray[0:size]))
+
+        results.addDMColumn(dict['column'], attribute = distArray[0:size])
+
+    return results
+
 
 
 def semanticLabelMatch(results, n, dataDict, graphs, gloveVect):
