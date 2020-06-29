@@ -35,7 +35,7 @@ CORS(app)
 
 globals.init()
 
-ALLOWED_EXTENSIONS = set(['owl', 'ttl'])
+ALLOWED_EXTENSIONS = set(['owl', 'ttl', 'rdf'])
 
 algorithms = ['string-dist']
 

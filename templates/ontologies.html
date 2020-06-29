@@ -14,7 +14,6 @@
         <th>Ontology</th>
         <th>IRI</th>
         <th>Version</th>
-        <th>AMR Parsed</th>
         <th>Ready</th>
       </tr>
       {% for ontology in ontologies %}
@@ -22,7 +21,6 @@
         <td>{{ ontology.name }}</td>
         <td>{{ ontology.iri }}</td>
         <td>{{ ontology.version }}</td>
-        <td>{{ ontology.amrDone }}</td>
         <td>{{ ontology.notInProgress }}</td>
       </tr>
       {% endfor %}

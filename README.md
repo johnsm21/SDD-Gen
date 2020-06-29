@@ -3,12 +3,10 @@ Datasets in the wild often have data dictionaries (definitions explaining a colu
 
 To address this issue our team has created SDDGen a web service that automates the SDD generation process. Provided with a data dictionary and a list of ontologies to form mappings from SDDGen generates an SDD along with the other N-1 most likely mappings for each cell. This allows domain experts to focus on reviewing mappings instead of exploring ontologies for terms which expedites SDD creation.
 
-To form mappings SDDGen uses the Context-Specific Entity Embedding strategy developed in [2] to generate embeddings for ontology class descriptions and data dictionary definitions. Then within this new search space we find which ontology classes align best with SDD properties.
+To form mappings SDDGen uses a transformer network to generate embeddings for ontology class descriptions and data dictionary definitions. Then within this new search space we find which ontology classes align best with SDD properties.
 
 ## Requirements
 [python 3](https://www.python.org/download/releases/3.0/)
-
-[java 8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 
 [blazegraph](https://www.blazegraph.com/download/)
 
@@ -28,14 +26,11 @@ python3 -m venv env
 source env/bin/activate
 pip3 install -r requirements.txt
 
-# Install CAMR library
-cd lib
-git clone https://github.com/johnsm21/CAMR-Python3.git
-cd CAMR-Python3
-./scripts/config.sh
+# Install pytorch
 
-# Copy CAMR model into SDDGen/lib folder
-https://drive.google.com/file/d/1xI4CCYUodZ3b4amCV-8O7RuhwBz9nj-j/view?usp=sharing
+# Copy GLOVE Embeddings into SDDGen/... folder
+TODO
+
 
 # Run blazegraph
 java -server -Xmx4g -Dbigdata.propertyFile=RWStore.properties -jar blazegraph.jar
@@ -49,5 +44,3 @@ deactivate
 ```
 ## References
 [1] Rashid, Sabbir M., et al. "The Semantic Data Dictionary Approach to Data Annotation & Integration." SemSci@ ISWC. 2017.
-
-[2] Huang, Lifu, et al. "Building a fine-grained entity typing system overnight for a new x (x= language, domain, genre)." arXiv preprint arXiv:1603.03112 (2016).

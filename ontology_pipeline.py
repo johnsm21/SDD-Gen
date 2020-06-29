@@ -9,7 +9,7 @@ from rdflib import URIRef, Namespace, Graph, Literal
 import sys
 sys.path.append('lib/CAMR-Python3/')
 
-import amr_parsing
+# import amr_parsing
 
 
 rdfFileType = {
@@ -111,46 +111,6 @@ def ingest(file):
             globals.ontoInProgress[base_graph_namespace] = False
             return False
 
-
-    # Check if amr graph exists
-    amr_namespace = base_graph_namespace + "/amr"
-    print( '7 sparql_ep = ' + str(sparql_ep))
-    print( '8 amr_namespace = ' + str(amr_namespace))
-    if checkIfNamespaceExits(sparql_ep, amr_namespace):
-        print("Note graph: " + amr_namespace + " already exists skipping AMR load")
-    else:
-        print("Note graph: " + amr_namespace + " not found begin loading")
-        descriptFile = file + ".txt"
-        print( '9 sparql_ep = ' + str(sparql_ep))
-        print( '10 descriptFile = ' + str(descriptFile))
-        classIndex = generateAMRTextFile(sparql_ep, graph_namespace, descriptFile)
-        print("generated description file!")
-
-        # Run AMR
-        # model = 'lib/amr-semeval-all.train.basic-abt-brown-verb.m'
-        model = 'lib/python3_model_5.basic-abt-brown-verb.m'
-
-        # run the preprocessor
-        sys.argv = ['amr_parsing.py','-m', 'preprocess', descriptFile]
-        amr_parsing.main()
-
-        # run the parser
-        sys.argv = ['amr_parsing.py','-m', 'parse', '--model', model, descriptFile]
-        amr_parsing.main()
-        print("Finished Running AMR")
-
-        # run the AMR to RDF converter
-        print( '11 descriptFile + ".all.basic-abt-brown-verb.parsed" = ' + str(descriptFile + ".all.basic-abt-brown-verb.parsed"))
-        # print( '12 classIndex = ' + str(classIndex))
-        ontoToLabel(descriptFile + ".all.basic-abt-brown-verb.parsed", classIndex)
-        print( '13 base_url = ' + str(base_url))
-        print( '14 amr_namespace = ' + str(amr_namespace))
-        print( '15 descriptFile + ".all.basic-abt-brown-verb.parsed" + ".rdf" = ' + str(descriptFile + ".all.basic-abt-brown-verb.parsed" + ".rdf"))
-        print( '16 namespace = ' + str(namespace))
-        if not loadQuad(base_url, amr_namespace, descriptFile + ".all.basic-abt-brown-verb.parsed" + ".rdf", namespace):
-            print("Error: Couldn't load: " + amr_namespace, descriptFile + ".all.basic-abt-brown-verb.parsed" + ".rdf")
-            globals.ontoInProgress[base_graph_namespace] = False
-            return False
 
     globals.ontoInProgress[base_graph_namespace] = False
 
