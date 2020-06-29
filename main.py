@@ -28,6 +28,8 @@ from sdd_generator import SDD
 import datetime
 import json
 
+import torch
+
 app = Flask(__name__)
 UPLOAD_FOLDER = "temp/"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -40,7 +42,13 @@ ALLOWED_EXTENSIONS = set(['owl', 'ttl', 'rdf'])
 algorithms = ['string-dist']
 
 print("Loading Glove Vectors...")
-gloveVect = glove.loadGlove(globals.glove_path)
+# gloveMap = glove.loadGlove(globals.glove_path)
+gloveMap, word2Id, weights = glove.loadGlove(globals.glove_path)
+
+
+print("Intialize Transformer Network...")
+model = torch.load(globals.model_path)
+model.eval()
 
 print("Server Ready!")
 
@@ -354,8 +362,9 @@ def populate_sdd():
         }), 400)
 
     results = SDD(ontologies, sioLabels = True)
-    results = sdd_aligner.semanticLabelMatchWithOntoPriority(results, numResults, dataDict, graphNames, gloveVect)
-    # results = sdd_aligner.semanticLabelMatch(results, numResults, dataDict, graphNames, gloveVect)
+    results = sdd_aligner.transformerMatchWithOntoPriority(results, numResults, dataDict, graphNames, gloveMap, word2Id, model)
+    # results = sdd_aligner.semanticLabelMatchWithOntoPriority(results, numResults, dataDict, graphNames, gloveMap)
+    # results = sdd_aligner.semanticLabelMatch(results, numResults, dataDict, graphNames, gloveMap)
     # results = sdd_aligner.labelMatch(results, numResults, dataDict, graphNames)
 
     print(results.sdd)

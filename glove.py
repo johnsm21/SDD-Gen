@@ -1,57 +1,30 @@
 import numpy as np
-import threading
-import queue
+import torch
 
 def loadGlove(filepath):
     gloveMap = {}
+    word2Id = {}
+    weights = []
 
     with open(filepath) as fp:
+        idx = 0
+        sum = None
         for line in fp:
             parsedLine = line.split(" ")
             gloveMap[parsedLine[0]] = np.array(parsedLine[1:]).astype(np.float)
-    return gloveMap
 
-## often much slower because of join
-def threadedLoadGlove(filepath):
-    numThreads = 8
+            word2Id[parsedLine[0]] = idx
+            weights.append(parsedLine[1:])
+            idx = idx + 1
 
-    def worker():
-        gloveMap = {}
-        while True:
-            line = q.get()
-            if line is None:
-                retQ.put(gloveMap)
-                break
-            parsedLine = line.split(" ")
-            gloveMap[parsedLine[0]] = np.array(parsedLine[1:]).astype(np.float)
-            q.task_done()
+            if sum is None:
+                sum = np.array(parsedLine[1:]).astype(np.float)
+            else:
+                sum = sum + np.array(parsedLine[1:]).astype(np.float)
 
-    q = queue.Queue()
-    retQ = queue.Queue()
+    unknownVector = np.divide(sum, idx)
+    weights.append(unknownVector)
+    gloveMap['<unknown>'] = unknownVector
+    word2Id['<unknown>'] = idx
 
-    threads = []
-    for i in range(numThreads):
-        t = threading.Thread(target=worker)
-        t.start()
-        threads.append(t)
-
-    with open(filepath) as fp:
-        for line in fp:
-            q.put(line)
-
-    # block until all tasks are done
-    q.join()
-
-    # stop workers
-    for i in range(numThreads):
-        q.put(None)
-
-    for t in threads:
-        t.join()
-
-    gloveMap = {}
-    while not retQ.empty():
-        gloveMap.update(retQ.get())
-
-    print(gloveMap)
-    return gloveMap
+    return gloveMap, word2Id, torch.from_numpy(np.array(weights).astype(np.float)).float()

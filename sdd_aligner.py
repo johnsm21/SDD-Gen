@@ -3,9 +3,65 @@ import jellyfish
 import helper_function
 import numpy as np
 from scipy import spatial
+import torch
+import wordConverter
+import globals
+
+def transformerMatchWithOntoPriority(results, n, dataDict, graphs, gloveMap, word2Id, model):
+    pMod = 0.8
+    slope = (pMod - 1)/(len(graphs)-1) # (1-pMod)/len(graphs)
+
+    # generate description embedding
+    dataX = []
+    dataCol = []
+    for dict in dataDict:
+        dataCol.append(dict['column'])
+        dataX.append(dict['description'])
+
+    dataX = np.array(dataX)
+    dataX = wordConverter.tokenize(gloveMap, dataX)
+    dataX = wordConverter.token2id(word2Id, dataX)
+    (dataX, input_msk) = wordConverter.pad_id(globals.max_sent_length, dataX)
+    input_msk = torch.from_numpy(np.asarray(input_msk))
+    dataX = torch.from_numpy(np.asarray(dataX))
+    predict = model.forward(dataX, input_msk)
+    predict = predict.detach().numpy()
+
+    for j in range(len(dataCol)):
+        ddC = dataCol[j]
+        ddVect = predict[j]
+
+        distArray = []
+        for i in range(len(graphs)):
+            weight = (slope*i) + 1
+            classNames = getClassNames([graphs[i]])
+            for iri, labelArray in classNames.items():
+                for label in labelArray:
+                    if label.lower() in gloveMap:
+                        labelVect = gloveMap[label.lower()]
+
+                        # d = spatial.distance.cosine(labelVect, ddVect)
+                        # distArray.append((label, d))
 
 
-def semanticLabelMatchWithOntoPriority(results, n, dataDict, graphs, gloveVect):
+                        d = ((1.0 - spatial.distance.cosine(labelVect, ddVect)) + 1.0)/2.0
+                        d = d * weight
+
+                        if d > 0.85:
+                             distArray.append((iri, d))
+
+
+        distArray = sorted(distArray, key=lambda x: x[1], reverse=True)
+        distArray = helper_function.fakeStars(distArray)
+
+        size = min([len(distArray), n])
+
+        results.addDMColumn(ddC, attribute = distArray[0:size])
+
+    return results
+
+
+def semanticLabelMatchWithOntoPriority(results, n, dataDict, graphs, gloveMap):
     pMod = 0.8
 
     slope = (pMod - 1)/(len(graphs)-1) # (1-pMod)/len(graphs)
@@ -15,15 +71,15 @@ def semanticLabelMatchWithOntoPriority(results, n, dataDict, graphs, gloveVect):
         ddlabel = dict['column'].lower()
 
         distArray = []
-        if ddlabel in gloveVect:
-            ddVect = gloveVect[ddlabel]
+        if ddlabel in gloveMap:
+            ddVect = gloveMap[ddlabel]
             for i in range(len(graphs)):
                 weight = (slope*i) + 1
                 classNames = getClassNames([graphs[i]])
                 for iri, labelArray in classNames.items():
                     for label in labelArray:
-                        if label.lower() in gloveVect:
-                            labelVect = gloveVect[label.lower()]
+                        if label.lower() in gloveMap:
+                            labelVect = gloveMap[label.lower()]
                             d = ((1.0 - spatial.distance.cosine(ddVect, labelVect)) + 1.0)/2.0
                             d = d * weight
 
@@ -48,7 +104,7 @@ def semanticLabelMatchWithOntoPriority(results, n, dataDict, graphs, gloveVect):
 
 
 
-def semanticLabelMatch(results, n, dataDict, graphs, gloveVect):
+def semanticLabelMatch(results, n, dataDict, graphs, gloveMap):
     # get all classes and IRIs
     classNames = getClassNames(graphs)
 
@@ -60,12 +116,12 @@ def semanticLabelMatch(results, n, dataDict, graphs, gloveVect):
         ddlabel = dict['column'].lower()
 
         distArray = []
-        if ddlabel in gloveVect:
-            ddVect = gloveVect[ddlabel]
+        if ddlabel in gloveMap:
+            ddVect = gloveMap[ddlabel]
             for iri, labelArray in classNames.items():
                 for label in labelArray:
-                    if label.lower() in gloveVect:
-                        labelVect = gloveVect[label.lower()]
+                    if label.lower() in gloveMap:
+                        labelVect = gloveMap[label.lower()]
                         # || a - b||
                         d = np.linalg.norm(ddVect - labelVect)
                         distArray.append((iri, d))
