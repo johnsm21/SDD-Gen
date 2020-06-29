@@ -7,7 +7,7 @@ To form mappings SDDGen uses a transformer network to generate embeddings for on
 
 ## Requirements
 [python 3](https://www.python.org/download/releases/3.0/)
-
+[java 8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 [blazegraph](https://www.blazegraph.com/download/)
 
 ## Install
@@ -26,13 +26,15 @@ python3 -m venv env
 source env/bin/activate
 pip3 install -r requirements.txt
 
-# Install pytorch
 
-# Copy GLOVE Embeddings into SDDGen/... folder
-TODO
+# Copy glove model glove.6B.50d.txt into SDDGen/lib folder
+https://drive.google.com/file/d/1Lf3rHNTjb1UFTEM0XeK2djimXQZaYjJO/view?usp=sharing
 
+# Copy transformer model 1000ep.pt into SDDGen/lib folder
+https://drive.google.com/file/d/1GdVpDEI7MRJRMng78CmNOKO4yzpQiY7C/view?usp=sharing
 
-# Run blazegraph
+## Running
+# Run blazegraph (a copy of RWStore.properties is within SDDGen/lib)
 java -server -Xmx4g -Dbigdata.propertyFile=RWStore.properties -jar blazegraph.jar
 
 # Run Server
