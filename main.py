@@ -1,11 +1,7 @@
 from flask import Flask
 
-
 import sys
-sys.path.append('lib/CAMR-Python3/')
-
 import globals
-import amr_parsing
 import os
 import glove
 
