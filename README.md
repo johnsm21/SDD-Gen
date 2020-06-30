@@ -7,7 +7,9 @@ To form mappings SDDGen uses a transformer network to generate embeddings for on
 
 ## Requirements
 [python 3](https://www.python.org/download/releases/3.0/)
+
 [java 8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+
 [blazegraph](https://www.blazegraph.com/download/)
 
 ## Install
@@ -24,26 +26,52 @@ git clone https://github.com/johnsm21/SDDGen.git
 cd SDDGen
 python3 -m venv env
 source env/bin/activate
+
+# Install python packages
 pip3 install -r requirements.txt
+python3 -m nltk.downloader all
 
 # Copy glove model glove.6B.50d.txt into SDDGen/lib folder
 https://drive.google.com/file/d/1Lf3rHNTjb1UFTEM0XeK2djimXQZaYjJO/view?usp=sharing
 
 # Copy transformer model 1000ep.pt into SDDGen/lib folder
 https://drive.google.com/file/d/1GdVpDEI7MRJRMng78CmNOKO4yzpQiY7C/view?usp=sharing
+
+# Run Blazegraph (a copy of RWStore.properties is within SDDGen/lib)
+java -server -Xmx4g -Dbigdata.propertyFile=RWStore.properties -jar blazegraph.jar
+
+# Setup quad Namespace in Blazegraph goto
+http://localhost:9999/blazegraph/#namespaces
+
+# Create new namespace called mapper
+
+# Set it to quads
+
+# Click Create namespace
 ```
 
 ## Running
 ``` bash
-# Run blazegraph (a copy of RWStore.properties is within SDDGen/lib)
-java -server -Xmx4g -Dbigdata.propertyFile=RWStore.properties -jar blazegraph.jar
-
 # Run Server
 cd SDDGen
-FLASK_APP=main.py flask run
+FLASK_APP=main.py flask run --host=0.0.0.0
 
 # Break down Virtual environment
 deactivate
 ```
+
+## Loading an Ontology
+``` bash
+# Go to
+http://localhost:5000/upload/
+
+# Choose owl file
+
+# Click Upload
+
+# Check to see all installed ontologies
+http://localhost:5000/ontologies/
+```
+
 ## References
 [1] Rashid, Sabbir M., et al. "The Semantic Data Dictionary Approach to Data Annotation & Integration." SemSci@ ISWC. 2017.
