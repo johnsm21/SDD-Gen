@@ -53,6 +53,12 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+@app.route('/ping/', methods=['POST'])
+def ping():
+    response = {}
+    response['on'] = True
+    return jsonify(response)
+
 @app.route('/check-ontology/', methods=['POST'])
 def check_ontology():
     req_data = request.get_json()
