@@ -181,9 +181,9 @@ def descriptionMatch(results, n, dataDict, graphs):
 
 def getAllClassNames():
     # setup sparql endpoint
-    base_url = "http://localhost:9999"
+    # ts_base_url = "http://localhost:9999"
     namespace = "mapper"
-    sparql = SPARQLWrapper(base_url + "/blazegraph/namespace/" + namespace + "/sparql")
+    sparql = SPARQLWrapper(globals.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql")
     sparql.setReturnFormat(JSON)
 
     # Create dictionary of classnames
@@ -212,9 +212,9 @@ def getAllClassNames():
 
 def getClassNames(graphs):
     # setup sparql endpoint
-    base_url = "http://localhost:9999"
+    # ts_base_url = "http://localhost:9999"
     namespace = "mapper"
-    sparql = SPARQLWrapper(base_url + "/blazegraph/namespace/" + namespace + "/sparql")
+    sparql = SPARQLWrapper(globals.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql")
     sparql.setReturnFormat(JSON)
 
     # Create dictionary of classnames

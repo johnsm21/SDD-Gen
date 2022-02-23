@@ -79,9 +79,9 @@ def distToConf(distArray):
     return distArray
 
 def getSioLabel(sioIri):
-    base_url = "http://localhost:9999"
+    # ts_base_url = "http://localhost:9999"
     namespace = "mapper"
-    sparql = SPARQLWrapper(base_url + "/blazegraph/namespace/" + namespace + "/sparql")
+    sparql = SPARQLWrapper(globals.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql")
     sparql.setReturnFormat(JSON)
     sparql.setQuery("""
         select ?label ?type

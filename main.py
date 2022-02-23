@@ -39,7 +39,9 @@ algorithms = ['string-dist']
 
 print("Loading Glove Vectors...")
 # gloveMap = glove.loadGlove(globals.glove_path)
-gloveMap, word2Id, weights = glove.loadGlove(globals.glove_path)
+
+# this one correct vvvvvvv
+# gloveMap, word2Id, weights = glove.loadGlove(globals.glove_path)
 
 
 print("Intialize Transformer Network...")

@@ -31,9 +31,9 @@ prefixMap = {
 
 
 def getInstalledOntologies():
-    base_url = "http://localhost:9999"
+    # ts_base_url = "http://localhost:9999"
     namespace = "mapper"
-    blazegraphURL = base_url + "/blazegraph/namespace/" + namespace + "/sparql"
+    blazegraphURL = globals.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql"
     sparql = SPARQLWrapper(blazegraphURL)
 
     sparql.setQuery("""
@@ -83,9 +83,9 @@ def getInstalledOntologies():
     return ontologies
 
 def getFullyInstalledOntologies():
-    base_url = "http://localhost:9999"
+    # ts_base_url = "http://localhost:9999"
     namespace = "mapper"
-    blazegraphURL = base_url + "/blazegraph/namespace/" + namespace + "/sparql"
+    blazegraphURL = globals.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql"
     sparql = SPARQLWrapper(blazegraphURL)
 
     sparql.setQuery("""

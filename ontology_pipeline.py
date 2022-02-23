@@ -85,8 +85,8 @@ def ingest(file):
 
     # Create a namespace for it
     namespace = "mapper"
-    base_url = "http://localhost:9999"
-    sparql_ep = base_url + "/blazegraph/namespace/" + namespace + "/sparql"
+    # ts_base_url = "http://localhost:9999"
+    sparql_ep = globals.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql"
 
 
     graph_namespace = base_graph_namespace + "/ontology"
@@ -102,11 +102,11 @@ def ingest(file):
         # Load Ontology into blazegraph
         print("Note graph: " + graph_namespace + " not found starting ontology load")
 
-        print( '3 base_url = ' + str(base_url))
+        print( '3 ts_base_url = ' + str(globals.ts_base_url))
         print( '4 graph_namespace = ' + str(graph_namespace))
         print( '5 file = ' + str(file))
         print( '6 namespace = ' + str(namespace))
-        if not loadQuad(base_url, graph_namespace, file, namespace):
+        if not loadQuad(globals.ts_base_url, graph_namespace, file, namespace):
             print("checkIfNamespaceExits Error: Couldn't load: " + file)
             globals.ontoInProgress[base_graph_namespace] = False
             return False
