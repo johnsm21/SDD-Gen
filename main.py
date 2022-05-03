@@ -29,18 +29,17 @@ import torch
 app = Flask(__name__)
 UPLOAD_FOLDER = "temp/"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-CORS(app)
 
 globals.init()
+
+CORS(app)
+
 
 ALLOWED_EXTENSIONS = set(['owl', 'ttl', 'rdf'])
 
 algorithms = ['string-dist']
 
 print("Loading Glove Vectors...")
-# gloveMap = glove.loadGlove(globals.glove_path)
-
-# this one correct vvvvvvv
 # gloveMap, word2Id, weights = glove.loadGlove(globals.glove_path)
 
 
@@ -542,3 +541,10 @@ def get_sdd():
     response['sdd'] = sdd
 
     return jsonify(response)
+
+
+if globals.httpsOn :
+    if __name__ == "__main__":
+        app.run(host='0.0.0.0', ssl_context='adhoc')
+else:
+    app.run(host='0.0.0.0')

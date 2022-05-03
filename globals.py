@@ -20,3 +20,5 @@ print(max_sent_length);
 ts_base_url = config.get('blazegraph', 'ts_base_url') # config._sections.blazegraph.ts_base_url #"http://localhost:9999" #'http://host.docker.internal:9999' # "http://localhost:9999"
 # heads = 1        # must be a multiple of the word vector dimension
 # N = 1
+
+httpsOn = config.getboolean('sddgen', 'enableHTTPS')
