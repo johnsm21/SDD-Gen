@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+    # The primary hadatac web app
+    sddgen:
+        build: ./
+        restart: always
+        container_name: sddgen
+        tty: true
+        ports:
+            - "5000:5000"
+        networks:
+            sddgen:
+                aliases:
+                    - sddgen
+        volumes:
+            - $PWD/cert:/app/cert
+
+volumes:
+    cert:
+
+networks:
+    sddgen:

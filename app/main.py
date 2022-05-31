@@ -26,6 +26,18 @@ import json
 
 import torch
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--cert_name', type=ascii, default='', help='the filename of the pks12 certificate')
+parser.add_argument('--cert_pass', type=ascii, default='', help='the password to the pks12 certificate')
+args = vars(parser.parse_args())
+
+
+import tempfile
+from cryptography.hazmat.primitives import serialization
+import cryptography.hazmat.primitives.serialization.pkcs12
+
+
 app = Flask(__name__)
 UPLOAD_FOLDER = "temp/"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -40,7 +52,7 @@ ALLOWED_EXTENSIONS = set(['owl', 'ttl', 'rdf'])
 algorithms = ['string-dist']
 
 print("Loading Glove Vectors...")
-# gloveMap, word2Id, weights = glove.loadGlove(globals.glove_path)
+gloveMap, word2Id, weights = glove.loadGlove(globals.glove_path)
 
 
 print("Intialize Transformer Network...")
@@ -545,6 +557,38 @@ def get_sdd():
 
 if globals.httpsOn :
     if __name__ == "__main__":
-        app.run(host='0.0.0.0', ssl_context='adhoc')
+        if eval(args['cert_name']): # if cert_name we try to open pks file
+            with open('cert/' + eval(args['cert_name']), 'rb') as f:
+                (
+                    private_key,
+                    certificate,
+                    additional_certificates,
+                ) = serialization.pkcs12.load_key_and_certificates(
+                    f.read(), eval(args['cert_pass']).encode()
+                )
+            # key will be available in user readable temporary file for the time of the
+            # program run (until key and cert get gc'ed)
+            key = tempfile.NamedTemporaryFile()
+            cert = tempfile.NamedTemporaryFile()
+            key.write(
+                private_key.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption(),
+                )
+            )
+            key.flush()
+            cert.write(
+                certificate.public_bytes(serialization.Encoding.PEM),
+            )
+            cert.flush()
+
+            args = None # delete the password
+            app.run(host='0.0.0.0', ssl_context=(cert.name, key.name))
+
+        else: # if cert_name not provided we go to adhoc we try to open pks file
+            args = None # delete the password
+            app.run(host='0.0.0.0', ssl_context='adhoc')
 else:
+    args = None # delete the password
     app.run(host='0.0.0.0')
