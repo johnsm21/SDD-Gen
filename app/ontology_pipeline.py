@@ -1,4 +1,4 @@
-import globals
+import globalVars
 import os
 import requests
 from SPARQLWrapper import SPARQLWrapper, JSON
@@ -86,12 +86,12 @@ def ingest(file):
     # Create a namespace for it
     namespace = "mapper"
     # ts_base_url = "http://localhost:9999"
-    sparql_ep = globals.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql"
+    sparql_ep = globalVars.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql"
 
 
     graph_namespace = base_graph_namespace + "/ontology"
 
-    globals.ontoInProgress[base_graph_namespace] = True
+    globalVars.ontoInProgress[base_graph_namespace] = True
 
     # Check if namespace exits
     print( '1 sparql_ep = ' + str(sparql_ep))
@@ -102,17 +102,19 @@ def ingest(file):
         # Load Ontology into blazegraph
         print("Note graph: " + graph_namespace + " not found starting ontology load")
 
-        print( '3 ts_base_url = ' + str(globals.ts_base_url))
+        print( '3 ts_base_url = ' + str(globalVars.ts_base_url))
         print( '4 graph_namespace = ' + str(graph_namespace))
         print( '5 file = ' + str(file))
         print( '6 namespace = ' + str(namespace))
-        if not loadQuad(globals.ts_base_url, graph_namespace, file, namespace):
+
+        # if not loadQuad(globalVars.ts_base_url, graph_namespace, file, namespace):
+        if not loadQuad(graph_namespace, file):
             print("checkIfNamespaceExits Error: Couldn't load: " + file)
-            globals.ontoInProgress[base_graph_namespace] = False
+            globalVars.ontoInProgress[base_graph_namespace] = False
             return False
 
 
-    globals.ontoInProgress[base_graph_namespace] = False
+    globalVars.ontoInProgress[base_graph_namespace] = False
 
     # Clean up temp directory
     textfile_dir = "temp/"
@@ -123,183 +125,159 @@ def ingest(file):
 
     return True
 
-def cleanNodeValue(value):
-    return value.rstrip().split("-")[0]
+## Removed because it is no longer used. Old code prior to fuseki shift
+# def cleanNodeValue(value):
+#     return value.rstrip().split("-")[0]
+#
+#
+# def ontoToLabel(filepathIn, classIndex):
+#     base = Namespace("https://github.com/tetherless-world/TWC-NHANES/AMR/")
+#     doco = Namespace("http://purl.org/spar/doco/")
+#     prov = Namespace("http://www.w3.org/ns/prov#")
+#
+#     g = Graph()
+#     g.bind('prov', prov)
+#     g.bind('doco', doco)
+#     g.bind('amr', base)
+#
+#     entity = ""
+#     stack = []
+#     with open(filepathIn) as f:
+#         for line in f:
+#             # parse id
+#             if "# ::id " in line:
+#                 id = line.split("# ::id ")[1].rstrip()
+#                 entity = "Sentence/" + id + "/"
+#                 g.add( (base[entity], RDF.type, doco.Sentence) )
+#                 g.add( (base[entity], prov.wasDerivedFrom, URIRef(classIndex[int(id)-1][0])))
+#
+#                 # reset stack
+#                 uniqueID = 0
+#                 stack = []
+#                 stack.append(base[entity])
+#
+#             else: # not id
+#                 # parse sentence
+#                 if "# ::snt " in line:
+#                     snt = line.split("# ::snt ")[1].rstrip()
+#                     g.add( (stack[-1], prov.value, Literal(snt)) )
+#
+#                 else: # not sentence
+#                     # parse root node
+#                     if line[0] == "(":
+#                         node = line[1:].split(" / ")[0]
+#                         node_value = cleanNodeValue(line[1:].split(" / ")[1])
+#
+#                         nodeIRI = base[entity + "AMRNode/" + node + "/"]
+#                         g.add( (nodeIRI, RDF.type, base.AMRNode) )
+#                         g.add( (stack[-1], base.hasRootNode, nodeIRI) )
+#                         g.add( (nodeIRI, prov.value, Literal(node_value)) )
+#
+#                         stack.append(nodeIRI)
+#                         # print(node + ": " + node_value)
+#
+#                     else: # not root node
+#                         # parse node
+#                         if line[0] == "\t":
+#                             noDepth = line.lstrip("\t")
+#                             currentDepth = len(line) - len(noDepth)
+#
+#                             parse = noDepth.split(" (")
+#                             if len(parse) == 1: # 2 value line
+#                                 edge = parse[0].split(" ")[0][1:]
+#                                 node = edge + "Node" + str(uniqueID)
+#                                 value = parse[0].split(" ")[1].rstrip("\n)")
+#                                 uniqueID = uniqueID + 1
+#                             else:
+#                                 if len(parse) == 2: # 3 value line
+#                                     edge = parse[0][1:]
+#                                     node = parse[1].split(" / ")[0]
+#                                     value = parse[1].split(" / ")[1].rstrip("\n)")
+#                                 else: # Unknown Case
+#                                     print("Unkown Case = " + line)
+#
+#                             # check if this node is a child, if its not get rid of unneeded state
+#                             while (currentDepth <= (len(stack)-2)):
+#                                 stack.pop()
+#
+#                             nodeIRI = base[entity + "AMRNode/" + node + "/"]
+#                             g.add( (nodeIRI, RDF.type, base.AMRNode) )
+#                             g.add( (stack[-1], base[edge], nodeIRI) )
+#                             g.add( (nodeIRI, prov.value, Literal(value)) )
+#                             stack.append(nodeIRI)
+#
+#                         else: # not a node
+#                             if not (line.rstrip() == ""): # your not empty lines so what are you?
+#                                 print("vvvvvvBADvvvvvvv")
+#                                 print(line)
+#                                 print("^^^^^^BAD^^^^^^^")
+#     g.serialize(destination=filepathIn + ".rdf", format="pretty-xml")
 
-
-def ontoToLabel(filepathIn, classIndex):
-    base = Namespace("https://github.com/tetherless-world/TWC-NHANES/AMR/")
-    doco = Namespace("http://purl.org/spar/doco/")
-    prov = Namespace("http://www.w3.org/ns/prov#")
-
-    g = Graph()
-    g.bind('prov', prov)
-    g.bind('doco', doco)
-    g.bind('amr', base)
-
-    entity = ""
-    stack = []
-    with open(filepathIn) as f:
-        for line in f:
-            # parse id
-            if "# ::id " in line:
-                id = line.split("# ::id ")[1].rstrip()
-                entity = "Sentence/" + id + "/"
-                g.add( (base[entity], RDF.type, doco.Sentence) )
-                g.add( (base[entity], prov.wasDerivedFrom, URIRef(classIndex[int(id)-1][0])))
-
-                # reset stack
-                uniqueID = 0
-                stack = []
-                stack.append(base[entity])
-
-            else: # not id
-                # parse sentence
-                if "# ::snt " in line:
-                    snt = line.split("# ::snt ")[1].rstrip()
-                    g.add( (stack[-1], prov.value, Literal(snt)) )
-
-                else: # not sentence
-                    # parse root node
-                    if line[0] == "(":
-                        node = line[1:].split(" / ")[0]
-                        node_value = cleanNodeValue(line[1:].split(" / ")[1])
-
-                        nodeIRI = base[entity + "AMRNode/" + node + "/"]
-                        g.add( (nodeIRI, RDF.type, base.AMRNode) )
-                        g.add( (stack[-1], base.hasRootNode, nodeIRI) )
-                        g.add( (nodeIRI, prov.value, Literal(node_value)) )
-
-                        stack.append(nodeIRI)
-                        # print(node + ": " + node_value)
-
-                    else: # not root node
-                        # parse node
-                        if line[0] == "\t":
-                            noDepth = line.lstrip("\t")
-                            currentDepth = len(line) - len(noDepth)
-
-                            parse = noDepth.split(" (")
-                            if len(parse) == 1: # 2 value line
-                                edge = parse[0].split(" ")[0][1:]
-                                node = edge + "Node" + str(uniqueID)
-                                value = parse[0].split(" ")[1].rstrip("\n)")
-                                uniqueID = uniqueID + 1
-                            else:
-                                if len(parse) == 2: # 3 value line
-                                    edge = parse[0][1:]
-                                    node = parse[1].split(" / ")[0]
-                                    value = parse[1].split(" / ")[1].rstrip("\n)")
-                                else: # Unknown Case
-                                    print("Unkown Case = " + line)
-
-                            # check if this node is a child, if its not get rid of unneeded state
-                            while (currentDepth <= (len(stack)-2)):
-                                stack.pop()
-
-                            nodeIRI = base[entity + "AMRNode/" + node + "/"]
-                            g.add( (nodeIRI, RDF.type, base.AMRNode) )
-                            g.add( (stack[-1], base[edge], nodeIRI) )
-                            g.add( (nodeIRI, prov.value, Literal(value)) )
-                            stack.append(nodeIRI)
-
-                        else: # not a node
-                            if not (line.rstrip() == ""): # your not empty lines so what are you?
-                                print("vvvvvvBADvvvvvvv")
-                                print(line)
-                                print("^^^^^^BAD^^^^^^^")
-    g.serialize(destination=filepathIn + ".rdf", format="pretty-xml")
-
-def generateAMRTextFile(blazegraphURL, graph_namespace, file):
-    sparql = SPARQLWrapper(blazegraphURL)
-    sparql.setQuery("""
-        prefix dcterm: <http://purl.org/dc/terms/>
-        prefix skos: <http://www.w3.org/2004/02/skos/core#>
-        select distinct ?class ?className ?description ?definition
-        where{
-          graph <%s> {
-            ?class  a           owl:Class ;
-                    rdfs:label  ?className .
-            optional{
-              ?class dcterm:description ?description .
-            }
-            optional{
-              ?class skos:definition ?definition .
-            }
-          }
-        } order by asc(?className)
-        """ % graph_namespace)
-
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
-
-    classIndex = []
-    classIRIs = []
-
-    with open(file, 'w') as the_file:
-        for result in results["results"]["bindings"]:
-            classIRI = str(result["class"]["value"])
-            className = str(result["className"]["value"])
-            if classIRI in classIRIs:
-                print('Duplicate description for ' + classIRI)
-            else:
-                if ("description" in result) or ("definition" in result):
-                    if "description" in result:
-                        description = str(result["description"]["value"])
-                    else:
-                        description = str(result["definition"]["value"])
-
-                    classIndex.append((classIRI, className))
-                    classIRIs.append(classIRI)
-
-                    # If there are multiple sentences only look at the first one
-                    sentence = description.split(".")[0].replace('\n', ' ')
-                    the_file.write(sentence + "." + '\n')
-    return classIndex
+## Removed because it is no longer used. Old code prior to fuseki shift
+# def generateAMRTextFile(blazegraphURL, graph_namespace, file):
+#     sparql = SPARQLWrapper(blazegraphURL)
+#     sparql.setQuery("""
+#         prefix dcterm: <http://purl.org/dc/terms/>
+#         prefix skos: <http://www.w3.org/2004/02/skos/core#>
+#         select distinct ?class ?className ?description ?definition
+#         where{
+#           graph <%s> {
+#             ?class  a           owl:Class ;
+#                     rdfs:label  ?className .
+#             optional{
+#               ?class dcterm:description ?description .
+#             }
+#             optional{
+#               ?class skos:definition ?definition .
+#             }
+#           }
+#         } order by asc(?className)
+#         """ % graph_namespace)
+#
+#     sparql.setReturnFormat(JSON)
+#     results = sparql.query().convert()
+#
+#     classIndex = []
+#     classIRIs = []
+#
+#     with open(file, 'w') as the_file:
+#         for result in results["results"]["bindings"]:
+#             classIRI = str(result["class"]["value"])
+#             className = str(result["className"]["value"])
+#             if classIRI in classIRIs:
+#                 print('Duplicate description for ' + classIRI)
+#             else:
+#                 if ("description" in result) or ("definition" in result):
+#                     if "description" in result:
+#                         description = str(result["description"]["value"])
+#                     else:
+#                         description = str(result["definition"]["value"])
+#
+#                     classIndex.append((classIRI, className))
+#                     classIRIs.append(classIRI)
+#
+#                     # If there are multiple sentences only look at the first one
+#                     sentence = description.split(".")[0].replace('\n', ' ')
+#                     the_file.write(sentence + "." + '\n')
+#     return classIndex
 
 
 def checkIfNamespaceExits(blazegraphURL, namespace):
-    sparql = SPARQLWrapper(blazegraphURL)
-    sparql.setQuery("""
+    query = """
         ask{
-          graph <%s> {
-            ?s ?p ?o .
-          }
-         }
-        """ % namespace)
+            graph <%s> {
+                ?s ?p ?o .
+            }
+        }
+    """ % namespace
+    qres = globalVars.store.query(query)
+    return qres.askAnswer
 
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
-    return results["boolean"]
-
-def loadQuad(blazegraphURL, quadnamespace, file, namespace):
+def loadQuad(quadnamespace, file):
     filepath = os.path.abspath(file)
-    propertiesPath = "RWStore.properties"
-    format = rdfFileType[file.split('.')[-1]]
 
-    # RDF Format (Default is rdf/xml)
-    # Default Graph URI (Optional - Required for quads mode namespace)
-    # Suppress all stdout messages (Optional)
-    # Show additional messages detailing the load performance. (Optional)
-    # Compute the RDF(S)+ closure. (Optional)
-    # Files will be renamed to either .good or .fail as they are processed.
-    # The namespace of the KB instance. Defaults to kb.
-    # The configuration file for the database instance. It must be readable by the web application.
-    # Zero or more files or directories containing the data to be loaded. This should be a comma delimited list. The files must be readable by the web application.
-    data = f"""<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-            <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
-        	  <properties>
-        	      <entry key="format">{format}</entry>
-        	      <entry key="defaultGraph">{quadnamespace}</entry>
-        	      <entry key="quiet">false</entry>
-        	      <entry key="verbose">0</entry>
-        	      <entry key="closure">false</entry>
-        	      <entry key="durableQueues">true</entry>
-        	      <entry key="namespace">{namespace}</entry>
-        	      <entry key="propertyFile">{propertiesPath}</entry>
-        	      <entry key="fileOrDirs">{filepath}</entry>
-              </properties>"""
+    graph = Graph(globalVars.store, identifier = URIRef(quadnamespace))
+    graph.parse(filepath)
 
-    headers = {'Content-Type': 'application/xml',}
-    response = requests.post(blazegraphURL + "/blazegraph/dataloader", headers=headers, data=data)
-    return (response.status_code == 201) or (response.status_code == 200)
+    print('graph size = ' + str(len(graph)))
+    return len(graph) > 0

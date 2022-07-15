@@ -1,7 +1,7 @@
 from flask import Flask
 
 import sys
-import globals
+import globalVars
 import os
 import glove
 
@@ -42,7 +42,7 @@ app = Flask(__name__)
 UPLOAD_FOLDER = "temp/"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-globals.init()
+globalVars.init()
 
 CORS(app)
 
@@ -52,12 +52,36 @@ ALLOWED_EXTENSIONS = set(['owl', 'ttl', 'rdf'])
 algorithms = ['string-dist']
 
 print("Loading Glove Vectors...")
-gloveMap, word2Id, weights = glove.loadGlove(globals.glove_path)
+# gloveMap, word2Id, weights = glove.loadGlove(globalVars.glove_path)
 
 
 print("Intialize Transformer Network...")
-model = torch.load(globals.model_path)
+model = torch.load(globalVars.model_path)
 model.eval()
+
+
+def TsConnected():
+    try:
+        tquery = """
+        ASK {
+            ?s ?p ?o .
+        }"""
+        qres = globalVars.store.query(tquery)
+
+    except ValueError:
+        print("Triplestore disconnected");
+        return False
+
+    return True
+
+
+print("Connecting to Triple Store...")
+if (TsConnected()):
+    print('Connected!')
+
+else:
+    print('Disconnected!')
+
 
 print("Server Ready!")
 
@@ -486,33 +510,35 @@ def json_example():
            The item at index 0 in the example list is: {}
            The boolean value is: {}'''.format(language, framework, python_version, example, boolean_test)
 
-
-
 @app.route("/")
-def hello():
+def main():
     # ontology_pipeline.ingest("temp/sio.owl")
 
-    textfile_dir = "temp/"
-    textfile = 'textFile.txt'
-    model = 'lib/amr-semeval-all.train.basic-abt-brown-verb.m'
+    # textfile_dir = "temp/"
+    # textfile = 'textFile.txt'
+    # model = 'lib/amr-semeval-all.train.basic-abt-brown-verb.m'
+    #
+    # # clean up parsed files
+    # files = os.listdir(textfile_dir)
+    # for file in files:
+    #     if file.endswith(".prp") or file.endswith(".tok") or file.endswith(".parse") or file.endswith(".dep") or file.endswith(".parsed"):
+    #         os.remove(os.path.join(textfile_dir, file))
+    #
+    # # run the preprocessor
+    # sys.argv = ['amr_parsing.py','-m', 'preprocess', textfile_dir + textfile]
+    # # amr_parsing.main()
+    #
+    # # run the parser
+    # sys.argv = ['amr_parsing.py','-m', 'parse', '--model', model, textfile_dir + textfile]
+    # # amr_parsing.main()
 
-    # clean up parsed files
-    files = os.listdir(textfile_dir)
-    for file in files:
-        if file.endswith(".prp") or file.endswith(".tok") or file.endswith(".parse") or file.endswith(".dep") or file.endswith(".parsed"):
-            os.remove(os.path.join(textfile_dir, file))
-
-    # run the preprocessor
-    sys.argv = ['amr_parsing.py','-m', 'preprocess', textfile_dir + textfile]
-    # amr_parsing.main()
-
-    # run the parser
-    sys.argv = ['amr_parsing.py','-m', 'parse', '--model', model, textfile_dir + textfile]
-    # amr_parsing.main()
 
     head = {'home': 'true'}
-    message = {'content': 'Hello World!'}
-
+    message = {
+        'glove': str('gloveMap' in globals()),
+        'model': str('model' in globals()),
+        'ts': str(TsConnected())
+    }
     return render_template('home.html', head=head, message=message)
 
 @app.route('/get-sdd/', methods=['GET','POST'])
@@ -555,7 +581,7 @@ def get_sdd():
     return jsonify(response)
 
 
-if globals.httpsOn :
+if globalVars.httpsOn :
     if __name__ == "__main__":
         if eval(args['cert_name']): # if cert_name we try to open pks file
             with open('cert/' + eval(args['cert_name']), 'rb') as f:

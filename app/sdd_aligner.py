@@ -5,7 +5,7 @@ import numpy as np
 from scipy import spatial
 import torch
 import wordConverter
-import globals
+import globalVars
 
 def transformerMatchWithOntoPriority(results, n, dataDict, graphs, gloveMap, word2Id, model):
     pMod = 0.8
@@ -21,7 +21,7 @@ def transformerMatchWithOntoPriority(results, n, dataDict, graphs, gloveMap, wor
     dataX = np.array(dataX)
     dataX = wordConverter.tokenize(gloveMap, dataX)
     dataX = wordConverter.token2id(word2Id, dataX)
-    (dataX, input_msk) = wordConverter.pad_id(globals.max_sent_length, dataX)
+    (dataX, input_msk) = wordConverter.pad_id(globalVars.max_sent_length, dataX)
     input_msk = torch.from_numpy(np.asarray(input_msk))
     dataX = torch.from_numpy(np.asarray(dataX))
     predict = model.forward(dataX, input_msk)
@@ -183,7 +183,7 @@ def getAllClassNames():
     # setup sparql endpoint
     # ts_base_url = "http://localhost:9999"
     namespace = "mapper"
-    sparql = SPARQLWrapper(globals.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql")
+    sparql = SPARQLWrapper(globalVars.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql")
     sparql.setReturnFormat(JSON)
 
     # Create dictionary of classnames
@@ -214,7 +214,7 @@ def getClassNames(graphs):
     # setup sparql endpoint
     # ts_base_url = "http://localhost:9999"
     namespace = "mapper"
-    sparql = SPARQLWrapper(globals.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql")
+    sparql = SPARQLWrapper(globalVars.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql")
     sparql.setReturnFormat(JSON)
 
     # Create dictionary of classnames

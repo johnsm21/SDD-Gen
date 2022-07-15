@@ -1,4 +1,4 @@
-import globals
+import globalVars
 import requests
 from SPARQLWrapper import SPARQLWrapper, JSON
 
@@ -29,67 +29,137 @@ prefixMap = {
 'http://www.w3.org/ns/prov#':                           'prov'
 }
 
+## Removed because it is no longer used. Old code prior to fuseki shift
+# def getInstalledOntologies():
+#     # ts_base_url = "http://localhost:9999"
+#     namespace = "mapper"
+#     blazegraphURL = globalVars.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql"
+#     sparql = SPARQLWrapper(blazegraphURL)
+#
+#     sparql.setQuery("""
+#         prefix vann: <http://purl.org/vocab/vann/>
+#         select distinct ?g ?onto ?ver ?perfer ?verIRI
+#         where{
+#             graph ?g {
+#                 ?onto a owl:Ontology .
+#
+#                 optional {
+#                     ?onto owl:versionInfo ?ver .
+#                 }
+#
+#                 optional {
+#                     ?onto owl:versionIRI ?verIRI .
+#                 }
+#
+#                 optional {
+#                     ?onto vann:preferredNamespaceUri ?perfer
+#                 }
+#             }
+#         } order by asc(?g)
+#         """)
+#
+#     sparql.setReturnFormat(JSON)
+#     results = sparql.query().convert()
+#
+#     ontologies = []
+#     for result in results["results"]["bindings"]:
+#
+#         baseUri = result["onto"]["value"]
+#
+#         if "ver" in result:
+#             version = result["ver"]["value"]
+#
+#         else:
+#             if "verIRI" in result:
+#                 version = result["verIRI"]["value"]
+#             else:
+#                 version = '1.0'
+#
+#         # if "perfer" in result:
+#             # baseUri = result["perfer"]["value"]
+#
+#
+#         ontologies.append((getPrefixCC(baseUri), baseUri, version));
+#     return ontologies
 
-def getInstalledOntologies():
-    # ts_base_url = "http://localhost:9999"
-    namespace = "mapper"
-    blazegraphURL = globals.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql"
-    sparql = SPARQLWrapper(blazegraphURL)
-
-    sparql.setQuery("""
-        prefix vann: <http://purl.org/vocab/vann/>
-        select distinct ?g ?onto ?ver ?perfer ?verIRI
-        where{
-            graph ?g {
-                ?onto a owl:Ontology .
-
-                optional {
-                    ?onto owl:versionInfo ?ver .
-                }
-
-                optional {
-                    ?onto owl:versionIRI ?verIRI .
-                }
-
-                optional {
-                    ?onto vann:preferredNamespaceUri ?perfer
-                }
-            }
-        } order by asc(?g)
-        """)
-
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
-
-    ontologies = []
-    for result in results["results"]["bindings"]:
-
-        baseUri = result["onto"]["value"]
-
-        if "ver" in result:
-            version = result["ver"]["value"]
-
-        else:
-            if "verIRI" in result:
-                version = result["verIRI"]["value"]
-            else:
-                version = '1.0'
-
-        # if "perfer" in result:
-            # baseUri = result["perfer"]["value"]
-
-
-        ontologies.append((getPrefixCC(baseUri), baseUri, version));
-    return ontologies
+## Modified because it is relied on AMR stuff. Old code prior to fuseki shift
+# def getFullyInstalledOntologies():
+#     # ts_base_url = "http://localhost:9999"
+#     namespace = "mapper"
+#     blazegraphURL = globalVars.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql"
+#     sparql = SPARQLWrapper(blazegraphURL)
+#
+#     sparql.setQuery("""
+#         prefix vann: <http://purl.org/vocab/vann/>
+#         select distinct ?g ?onto ?ver ?perfer ?verIRI
+#         where{
+#             graph ?g {
+#                 ?onto a owl:Ontology .
+#
+#                 optional {
+#                     ?onto owl:versionInfo ?ver .
+#                 }
+#
+#                 optional {
+#                     ?onto owl:versionIRI ?verIRI .
+#                 }
+#
+#                 optional {
+#                     ?onto vann:preferredNamespaceUri ?perfer
+#                 }
+#             }
+#         } order by asc(?g)
+#         """)
+#
+#     sparql.setReturnFormat(JSON)
+#     results = sparql.query().convert()
+#
+#     ontologies = []
+#     for result in results["results"]["bindings"]:
+#         baseUri = result["onto"]["value"]
+#
+#         if "ver" in result:
+#             version = result["ver"]["value"]
+#
+#         else:
+#             if "verIRI" in result:
+#                 version = result["verIRI"]["value"]
+#             else:
+#                 version = '1.0'
+#
+#         # if "perfer" in result:
+#         #     baseUri = result["perfer"]["value"]
+#
+#         # check if we have the corresponding amr graph
+#         ontGraph = result["g"]["value"]
+#
+#         array  = ontGraph.split('ontology')
+#         graphName = array[0]
+#         for i in range(len(array)-2):
+#             graphName = graphName + 'ontology' + array[i+1]
+#         print("graphName: " + graphName)
+#
+#         amrGraph = graphName + 'amr'
+#         sparql.setQuery("""
+#             ask{
+#                 graph <""" + amrGraph + """> {
+#                     ?s ?p ?o
+#                 }
+#             }
+#             """)
+#         exsits = sparql.query().convert()
+#
+#         if graphName in globalVars.ontoInProgress.keys():
+#             ontologies.append((getPrefixCC(baseUri), baseUri, version, exsits["boolean"], globalVars.ontoInProgress[graphName]), ontGraph);
+#         else:
+#             ontologies.append((getPrefixCC(baseUri), baseUri, version, exsits["boolean"], True, ontGraph));
+#
+#     return ontologies
 
 def getFullyInstalledOntologies():
-    # ts_base_url = "http://localhost:9999"
-    namespace = "mapper"
-    blazegraphURL = globals.ts_base_url + "/blazegraph/namespace/" + namespace + "/sparql"
-    sparql = SPARQLWrapper(blazegraphURL)
-
-    sparql.setQuery("""
+    query = """
         prefix vann: <http://purl.org/vocab/vann/>
+        prefix owl: <http://www.w3.org/2002/07/owl#>
         select distinct ?g ?onto ?ver ?perfer ?verIRI
         where{
             graph ?g {
@@ -108,52 +178,36 @@ def getFullyInstalledOntologies():
                 }
             }
         } order by asc(?g)
-        """)
+        """
 
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
-
+    qres = globalVars.store.query(query)
     ontologies = []
-    for result in results["results"]["bindings"]:
-        baseUri = result["onto"]["value"]
+    for g, onto, ver, perfer, verIRI in qres:
 
-        if "ver" in result:
-            version = result["ver"]["value"]
+        if ver is not None:
+            version = ver
 
         else:
-            if "verIRI" in result:
-                version = result["verIRI"]["value"]
+            if verIRI is not None:
+                version = verIRI
             else:
                 version = '1.0'
 
-        # if "perfer" in result:
-        #     baseUri = result["perfer"]["value"]
 
-        # check if we have the corresponding amr graph
-        ontGraph = result["g"]["value"]
-
-        array  = ontGraph.split('ontology')
+        array  = g.split('ontology')
         graphName = array[0]
         for i in range(len(array)-2):
             graphName = graphName + 'ontology' + array[i+1]
         print("graphName: " + graphName)
 
-        amrGraph = graphName + 'amr'
-        sparql.setQuery("""
-            ask{
-                graph <""" + amrGraph + """> {
-                    ?s ?p ?o
-                }
-            }
-            """)
-        exsits = sparql.query().convert()
 
-        if graphName in globals.ontoInProgress.keys():
-            ontologies.append((getPrefixCC(baseUri), baseUri, version, exsits["boolean"], globals.ontoInProgress[graphName]), ontGraph);
+        if graphName in globalVars.ontoInProgress.keys():
+            ontologies.append((getPrefixCC(onto), onto, version, False, globalVars.ontoInProgress[graphName]), g);
         else:
-            ontologies.append((getPrefixCC(baseUri), baseUri, version, exsits["boolean"], True, ontGraph));
+            ontologies.append((getPrefixCC(onto), onto, version, False, True, g));
 
     return ontologies
+
 
 def getPrefixCC(url):
 

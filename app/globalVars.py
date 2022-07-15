@@ -1,7 +1,16 @@
+from rdflib.plugins.stores import sparqlstore
+from rdflib import BNode
+
 def init():
     global ontoInProgress
     ontoInProgress = {}
 
+# RDFlib doesn't support bnodes by defualt so we use some basic code to name
+# the bnodes
+def my_bnode_ext(node):
+    if isinstance(node, BNode):
+        return '<bnode:b%s>' % node
+    return sparqlstore._node_to_sparql(node)
 ## glove_path = 'data/stanford/glove/common-crawl-840B-300d/glove.840B.300d.txt' ## 5 mins to loaded
 ## glove_path = 'data/stanford/glove/wikipedia2014-gigaword5/glove.6B.300d.txt' ## 40 seconds
 
@@ -15,10 +24,10 @@ glove_path = config.get('glove', 'glove_path') # config._sections.glove.glove_pa
 # Transformer settings
 model_path = config.get('transformer', 'model_path')  # config._sections.transformer.model_path
 max_sent_length = config.getint('transformer', 'max_sent_length')
-print(max_sent_length);
 
-ts_base_url = config.get('blazegraph', 'ts_base_url') # config._sections.blazegraph.ts_base_url #"http://localhost:9999" #'http://host.docker.internal:9999' # "http://localhost:9999"
-# heads = 1        # must be a multiple of the word vector dimension
-# N = 1
+
+ts_base_url = config.get('fuseki', 'url') # config._sections.blazegraph.ts_base_url #"http://localhost:9999" #'http://host.docker.internal:9999' # "http://localhost:9999"
+store = sparqlstore.SPARQLUpdateStore(node_to_sparql=my_bnode_ext)
+store.open((ts_base_url + '/ds/query', ts_base_url + '/ds/update'))
 
 httpsOn = config.getboolean('sddgen', 'enableHTTPS')
