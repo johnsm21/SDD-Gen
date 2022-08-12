@@ -25,24 +25,26 @@ rdfFileType = {
 
 def ingest(file):
     # Figure out what ontology this is
-    ontology = None
-    version = None
-
     g = Graph()
+    fileFormat = None
     try:
         g.parse(file, format="xml")
+        fileFormat = "xml"
     except:
         print("not xml")
         try:
             g.parse(file, format="ttl")
+            fileFormat = "ttl"
         except:
             print("not ttl")
             try:
                 g.parse(file, format="n3")
+                fileFormat = "n3"
             except:
                 print("not n3")
                 try:
                     g.parse(file, format="ntriples")
+                    fileFormat = "ntriples"
                 except:
                     print("not ntriples")
 
@@ -50,7 +52,9 @@ def ingest(file):
 
     res = g.query(
     """
-       select ?onto ?ver ?verIRI
+       prefix owl: <http://www.w3.org/2002/07/owl#>
+       prefix oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+       select ?onto ?ver ?verIRI ?oboNameSpace
        where{
           ?onto a owl:Ontology .
           optional{
@@ -59,16 +63,49 @@ def ingest(file):
           optional{
              ?onto owl:versionIRI ?verIRI .
           }
+          optional{
+             ?onto oboInOwl:default-namespace ?oboNameSpace .
+          }
        }""")
 
+    ontlist = []
     for row in res:
 
-        ontology = str(row.onto)
+        # handle obo
+        if row.oboNameSpace is None:
+            ontology = str(row.onto)
+        else: # ontology IRI is blank node in the new api :(
+            ontology = 'http://purl.obolibrary.org/obo/' + str(row.oboNameSpace)
+
         version = row.ver
         versionIRI = row.verIRI
+
+        oboNameSpace = row.oboNameSpace
         print('Here ontology = ' + str(ontology))
         print('Here versionIRI = ' + str(versionIRI))
         print('Here version = ' + str(version))
+        print('Here oboNameSpace = ' + str(oboNameSpace))
+        ontlist.append([ontology, versionIRI, version])
+
+    ontology = None
+    versionIRI = None
+    version = None
+    if len(ontlist) == 1:
+        (ontology, versionIRI, version) = ontlist[0]
+    else:
+        if len(ontlist) > 1:
+            for onto, verI, ver in ontlist:
+                ontology = onto
+                versionIRI = verI
+                version = ver
+                if 'ontology' in ontology:
+                    break
+
+
+    print('final ontology = ' + str(ontology))
+    print('final versionIRI = ' + str(versionIRI))
+    print('final version = ' + str(version))
+
     g = None # Release resources
 
     if versionIRI is None:
@@ -108,7 +145,7 @@ def ingest(file):
         print( '6 namespace = ' + str(namespace))
 
         # if not loadQuad(globalVars.ts_base_url, graph_namespace, file, namespace):
-        if not loadQuad(graph_namespace, file):
+        if not loadQuad(graph_namespace, file, fileFormat):
             print("checkIfNamespaceExits Error: Couldn't load: " + file)
             globalVars.ontoInProgress[base_graph_namespace] = False
             return False
@@ -273,11 +310,11 @@ def checkIfNamespaceExits(blazegraphURL, namespace):
     qres = globalVars.store.query(query)
     return qres.askAnswer
 
-def loadQuad(quadnamespace, file):
+def loadQuad(quadnamespace, file, fileFormat):
     filepath = os.path.abspath(file)
 
     graph = Graph(globalVars.store, identifier = URIRef(quadnamespace))
-    graph.parse(filepath)
+    graph.parse(filepath, format = fileFormat)
 
     print('graph size = ' + str(len(graph)))
     return len(graph) > 0

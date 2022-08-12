@@ -81,6 +81,7 @@ def distToConf(distArray):
 # untested need to fix blank node first
 def getSioLabel(sioIri):
     sparql = """
+        prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
         select ?label ?type
         where{
             graph ?g {

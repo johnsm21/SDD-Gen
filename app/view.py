@@ -20,8 +20,10 @@ prefixMap = {
 'http://www.cognitiveatlas.org/ontology/cogat.owl':     'cogatOld',
 'http://hadatac.org/ont/cogat':                         'cogat',
 
-'http://purl.obolibrary.org/obo/cmo.obo':               'cmo',
-'http://purl.obolibrary.org/obo/doid.owl':              'doid',
+'http://purl.obolibrary.org/obo/cmo.obo':               'cmoOld',
+'http://purl.obolibrary.org/obo/clinical_measurement_ontology': 'cmo',
+'http://purl.obolibrary.org/obo/doid.owl':              'doidOld',
+'http://purl.obolibrary.org/obo/disease_ontology':      'doid',
 
 'http://purl.org/twc/HHEAR':                            'hhear',
 'http://purl.obolibrary.org/obo/':                      'obo',
@@ -160,7 +162,8 @@ def getFullyInstalledOntologies():
     query = """
         prefix vann: <http://purl.org/vocab/vann/>
         prefix owl: <http://www.w3.org/2002/07/owl#>
-        select distinct ?g ?onto ?ver ?perfer ?verIRI
+        prefix oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+        select distinct ?g ?onto ?ver ?perfer ?verIRI ?oboNameSpace
         where{
             graph ?g {
                 ?onto a owl:Ontology .
@@ -176,13 +179,21 @@ def getFullyInstalledOntologies():
                 optional {
                     ?onto vann:preferredNamespaceUri ?perfer
                 }
+
+                optional{
+                   ?onto oboInOwl:default-namespace ?oboNameSpace .
+                }
             }
         } order by asc(?g)
         """
 
     qres = globalVars.store.query(query)
     ontologies = []
-    for g, onto, ver, perfer, verIRI in qres:
+    for g, onto, ver, perfer, verIRI, oboNameSpace in qres:
+        if oboNameSpace is None:
+            ontology = str(onto)
+        else: # ontology IRI is blank node in the new api :(
+            ontology = 'http://purl.obolibrary.org/obo/' + str(oboNameSpace)
 
         if ver is not None:
             version = ver
@@ -202,11 +213,25 @@ def getFullyInstalledOntologies():
 
 
         if graphName in globalVars.ontoInProgress.keys():
-            ontologies.append((getPrefixCC(onto), onto, version, False, globalVars.ontoInProgress[graphName]), g);
+            ontologies.append((getPrefixCC(ontology), ontology, version, False, globalVars.ontoInProgress[graphName]), g);
         else:
-            ontologies.append((getPrefixCC(onto), onto, version, False, True, g));
+            ontologies.append((getPrefixCC(ontology), ontology, version, False, True, g));
 
-    return ontologies
+    # clean up duplicates
+    finalList = {}
+    for prefix, ontology, version, amrDone, notInProgress, graph in ontologies:
+        if graph in finalList.keys():
+            if finalList[graph][0] == 'NONE':
+                finalList[graph] = [prefix, ontology, version, amrDone, notInProgress]
+        else:
+            finalList[graph] = [prefix, ontology, version, amrDone, notInProgress]
+
+    finalOntologies = []
+    for graph in finalList:
+        [prefix, ontology, version, amrDone, notInProgress] = finalList[graph]
+        finalOntologies.append((prefix, ontology, version, amrDone, notInProgress, graph));
+
+    return finalOntologies
 
 
 def getPrefixCC(url):
