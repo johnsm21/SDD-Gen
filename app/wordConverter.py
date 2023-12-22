@@ -2,9 +2,11 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from textblob import Word
 import torch
 import numpy as np
+from numpy import linalg as LA
 from scipy import spatial
 import TopMatcher
 import time
+from string import punctuation
 
 def loadGlove(filepath):
     gloveMap = {}
@@ -16,25 +18,25 @@ def loadGlove(filepath):
         sum = None
         for line in fp:
             parsedLine = line.split(" ")
-            gloveMap[parsedLine[0]] = np.array(parsedLine[1:]).astype(np.float)
+            gloveMap[parsedLine[0]] = np.array(parsedLine[1:]).astype(float)
 
             word2Id[parsedLine[0]] = idx
             weights.append(parsedLine[1:])
             idx = idx + 1
 
             if sum is None:
-                sum = np.array(parsedLine[1:]).astype(np.float)
+                sum = np.array(parsedLine[1:]).astype(float)
             else:
-                sum = sum + np.array(parsedLine[1:]).astype(np.float)
+                sum = sum + np.array(parsedLine[1:]).astype(float)
 
     unknownVector = np.divide(sum, idx)
     weights.append(unknownVector)
     gloveMap['<unknown>'] = unknownVector
     word2Id['<unknown>'] = idx
 
-    return gloveMap, word2Id, torch.from_numpy(np.array(weights).astype(np.float)).float()
+    return gloveMap, word2Id, torch.from_numpy(np.array(weights).astype(float)).float()
 
-def word2Glove(w2vmap, data):
+def word2Glove(w2vmap, data, printMiss=True):
     slash = w2vmap['/']
     print('-------------------')
     allData = []
@@ -52,17 +54,19 @@ def word2Glove(w2vmap, data):
                                 row.append(w2vmap[i])
                                 row.append(slash)
                             else:
-                                print('Missing: ' + i)
+                                if printMiss:
+                                    print('Missing: ' + i)
                     row = row[0:-1]
                 else:
-                    print('Missing: ' + token)
+                    if printMiss:
+                        print('Missing: ' + token)
         allData.append(row)
 
     print('-------------------')
     return allData
 
 
-def tokenize(w2vmap, data):
+def tokenize(w2vmap, data, printMiss=True):
     allData = []
     for dataum in data:
         dataum = dataum.lower()
@@ -77,7 +81,8 @@ def tokenize(w2vmap, data):
                             if(i in w2vmap):
                                 row.append(i)
                             else:
-                                print('Missing: ' + i)
+                                if printMiss:
+                                    print('Missing: ' + i)
                                 row.append('<unknown>')
 
                             row.append("/")
@@ -86,10 +91,12 @@ def tokenize(w2vmap, data):
                     # perfrom spell checking
                     result = Word(token).spellcheck()[0]
                     if (result[0] != token) and (result[1] > 0.9) and (result[0] in w2vmap):
-                        print('Autocorrect: ' + token + ' ---> ' + result[0])
+                        if printMiss:
+                            print('Autocorrect: ' + token + ' ---> ' + result[0])
                         row.append(result[0])
                     else:
-                        print('Missing: ' + token)
+                        if printMiss:
+                            print('Missing: ' + token)
                         row.append('<unknown>')
         allData.append(row)
 
@@ -102,6 +109,18 @@ def token2id(tokenvmap, data):
         row = []
         for d in dataum:
             row.append(tokenvmap[d])
+        allData.append(row)
+
+    return allData
+
+def token2idY(tokenvmap, data):
+    ignoreList = set(punctuation);
+    allData = []
+    for dataum in data:
+        row = []
+        for d in dataum:
+            if d not in ignoreList:
+                row.append(tokenvmap[d])
         allData.append(row)
 
     return allData
@@ -120,6 +139,88 @@ def idY2Glove(weights, data):
     allData = []
     for dataum in data:
         allData.append(weights[dataum])
+    return allData
+
+def idY2GloveAverage(weights, data, gloveMap):
+    allData = []
+
+    for dataum in data:
+        if len(dataum) == 1:
+            allData.append(weights[dataum]);
+        else:
+            arr = np.reshape(weights[dataum[0]], (1, -1));
+            for i in range(len(dataum)-1):
+                dp1 = np.reshape(weights[dataum[i+1]], (1, -1));
+                arr = np.concatenate((arr, dp1), axis=0);
+
+            # print(arr);
+            avg = np.average(arr, axis=0);
+
+            # print(getTopXMatches(gloveMap, avg, 5));
+
+
+            # convert to torch array
+            avg = np.reshape(avg, (1, -1)).astype(float);
+            avg = torch.from_numpy(avg).float();
+            allData.append(avg);
+
+    return allData
+
+def idY2_L1NormSum(weights, data):
+    allData = []
+
+    for dataum in data:
+        if len(dataum) == 1:
+            allData.append(weights[dataum]);
+
+        else:
+            arr = np.reshape(weights[dataum[0]], (1, -1));
+            for i in range(len(dataum)-1):
+                dp1 = np.reshape(weights[dataum[i+1]], (1, -1));
+                arr = np.concatenate((arr, dp1), axis=0);
+
+            arrSum = np.sum(arr, axis=0);
+            l1Nrom = LA.norm(arrSum, ord=1);
+            l1NormSum = np.divide(arrSum, l1Nrom);
+
+            # print(getTopXMatches(gloveMap, l1NormSum, 5));
+            # print(LA.norm(l1NormSum,ord=1));
+
+            # convert to torch array
+            l1NormSum = np.reshape(l1NormSum, (1, -1)).astype(float);
+            l1NormSum = torch.from_numpy(l1NormSum).float();
+            allData.append(l1NormSum);
+
+    # print(allData);
+    return allData
+
+def idY2_L1NormSumPrinter(weights, data, gloveMap):
+    allData = []
+    print(weights)
+    print(data)
+    for dataum in data:
+        if len(dataum) == 1:
+            allData.append(weights[dataum]);
+
+        else:
+            arr = np.reshape(weights[dataum[0]], (1, -1));
+            for i in range(len(dataum)-1):
+                dp1 = np.reshape(weights[dataum[i+1]], (1, -1));
+                arr = np.concatenate((arr, dp1), axis=0);
+
+            arrSum = np.sum(arr, axis=0);
+            l1Nrom = LA.norm(arrSum, ord=1);
+            l1NormSum = np.divide(arrSum, l1Nrom);
+
+            print(getTopXMatches(gloveMap, l1NormSum, 5));
+            # print(LA.norm(l1NormSum,ord=1));
+
+            # convert to torch array
+            l1NormSum = np.reshape(l1NormSum, (1, -1)).astype(float);
+            l1NormSum = torch.from_numpy(l1NormSum).float();
+            allData.append(l1NormSum);
+
+    # print(allData);
     return allData
 
 def pad_id(length, data):

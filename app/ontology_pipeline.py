@@ -1,7 +1,10 @@
 import globalVars
 import os
 import requests
+import wordConverter
 from SPARQLWrapper import SPARQLWrapper, JSON
+
+import pickle;
 
 from rdflib.namespace import RDF
 from rdflib import URIRef, Namespace, Graph, Literal
@@ -22,6 +25,153 @@ rdfFileType = {
 'n3' : 'n3',
 'nq' : 'n-quads'
 }
+
+
+def generateOntoEmbedding(file, gloveMap, word2Id, weights):
+    # Figure out what ontology this is
+    g = Graph()
+    fileFormat = None
+    try:
+        g.parse(file, format="rdf")
+        fileFormat = "rdf"
+    except:
+        print("not rdf")
+        try:
+            g.parse(file, format="xml")
+            fileFormat = "xml"
+        except:
+            print("not xml")
+            try:
+                g.parse(file, format="ttl")
+                fileFormat = "ttl"
+            except:
+                print("not ttl")
+                try:
+                    g.parse(file, format="n3")
+                    fileFormat = "n3"
+                except:
+                    print("not n3")
+                    try:
+                        g.parse(file, format="ntriples")
+                        fileFormat = "ntriples"
+                    except:
+                        print("not ntriples")
+
+    print("number of triples "+ str(len(g)))
+
+    res = g.query(
+    """
+       prefix owl: <http://www.w3.org/2002/07/owl#>
+       prefix oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+       select ?onto ?ver ?verIRI ?oboNameSpace
+       where{
+          ?onto a owl:Ontology .
+          optional{
+             ?onto owl:versionInfo ?ver .
+          }
+          optional{
+             ?onto owl:versionIRI ?verIRI .
+          }
+          optional{
+             ?onto oboInOwl:default-namespace ?oboNameSpace .
+          }
+       }""")
+
+    ontlist = []
+    for row in res:
+
+        # handle obo
+        if row.oboNameSpace is None:
+            ontology = str(row.onto)
+        else: # ontology IRI is blank node in the new api :(
+            ontology = 'http://purl.obolibrary.org/obo/' + str(row.oboNameSpace)
+
+        version = row.ver
+        versionIRI = row.verIRI
+
+        oboNameSpace = row.oboNameSpace
+        # print('Here ontology = ' + str(ontology))
+        # print('Here versionIRI = ' + str(versionIRI))
+        # print('Here version = ' + str(version))
+        # print('Here oboNameSpace = ' + str(oboNameSpace))
+        ontlist.append([ontology, versionIRI, version])
+
+    ontology = None
+    versionIRI = None
+    version = None
+    if len(ontlist) == 1:
+        (ontology, versionIRI, version) = ontlist[0]
+    else:
+        if len(ontlist) > 1:
+            for onto, verI, ver in ontlist:
+                ontology = onto
+                versionIRI = verI
+                version = ver
+                if 'ontology' in ontology:
+                    break
+
+    # Save metadata
+    print('final ontology = ' + str(ontology))
+    print('final versionIRI = ' + str(versionIRI))
+    print('final version = ' + str(version))
+
+    if ontology is None:
+        print('Couldnt parse the file: ' + file);
+        return False;
+
+    if str(ontology) in globalVars.loadedOntos:
+        print(str(ontology) + ' has already been loaded, skipping!');
+        return False;
+
+    ont = {};
+    ont['versionIRI'] = versionIRI;
+    ont['version'] = version;
+    ont['amrDone'] = True;
+    ont['notInProgress'] = False;
+
+    globalVars.loadedOntos[str(ontology)] = ont;
+
+
+    # get all class labels
+    res = g.query(
+    """
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX owl: <http://www.w3.org/2002/07/owl#>
+        select distinct ?variable ?label
+        where{
+           { ?variable a owl:Class }
+           UNION
+           { ?variable a rdfs:Class }
+
+           ?variable rdfs:label ?label .
+        }
+    """);
+    print('Found ' + str(len(res)) + ' classes!');
+
+    # Generate Embeddings
+    classList = {};
+    for row in res:
+        varIRI = str(row.variable);
+        varLabel = str(row.label);
+        # print('varIRI = ' + varIRI);
+        # print('varLabel = ' + varLabel);
+        dataY = wordConverter.tokenize(gloveMap, [varLabel], printMiss=False);
+        dataY = wordConverter.token2idY(word2Id, dataY);
+        dataY = wordConverter.idY2_L1NormSum(weights, dataY);
+        dataY = dataY.pop().detach().numpy()[0, :];
+
+        classList[varIRI] = dataY;
+        # sys.exit(0);
+
+    globalVars.loadedOntos[ontology]['classes'] = classList;
+    globalVars.loadedOntos[ontology]['notInProgress'] = True;
+
+    # Save the updated globalvars
+    f = open(globalVars.loadedOntos_path, 'wb');
+    pickle.dump(globalVars.loadedOntos, f);
+    f.close();
+
+    return True;
 
 def ingest(file):
     # Figure out what ontology this is

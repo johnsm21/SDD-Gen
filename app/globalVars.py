@@ -5,6 +5,9 @@ def init():
     global ontoInProgress
     ontoInProgress = {}
 
+    global loadedOntos
+    loadedOntos = {};
+
 # RDFlib doesn't support bnodes by defualt so we use some basic code to name
 # the bnodes
 def my_bnode_ext(node):
@@ -20,6 +23,7 @@ config.read('config.ini')
 
 
 glove_path = config.get('glove', 'glove_path') # config._sections.glove.glove_path
+loadedOntos_path = config.get('glove', 'onto_path')
 
 # Transformer settings
 model_path = config.get('transformer', 'model_path')  # config._sections.transformer.model_path

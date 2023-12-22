@@ -23,8 +23,9 @@ from sdd_generator import SDD
 
 import datetime
 import json
-
 import torch
+
+import pickle;
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -52,6 +53,9 @@ ALLOWED_EXTENSIONS = set(['owl', 'ttl', 'rdf'])
 algorithms = ['string-dist']
 
 print("Loading Glove Vectors...")
+f = open(globalVars.glove_path, 'rb');
+[gloveMap, word2Id, weights] = pickle.load(f);
+f.close();
 # gloveMap, word2Id, weights = glove.loadGlove(globalVars.glove_path)
 
 
@@ -75,12 +79,25 @@ def TsConnected():
     return True
 
 
-print("Connecting to Triple Store...")
-if (TsConnected()):
-    print('Connected!')
+# print("Connecting to Triple Store...")
+# if (TsConnected()):
+#     print('Connected!')
+#
+# else:
+#     print('Disconnected!')
+
+# Load Ontologies
+# We have an existing process ontology
+if os.path.isfile(globalVars.loadedOntos_path):
+    f = open(globalVars.loadedOntos_path, 'rb');
+    globalVars.loadedOntos = pickle.load(f);
+    f.close();
 
 else:
-    print('Disconnected!')
+    print("Loaded Ontologies File missing creating a new one!");
+    f = open(globalVars.loadedOntos_path, 'wb');
+    pickle.dump(globalVars.loadedOntos, f);
+    f.close();
 
 
 print("Server Ready!")
@@ -89,6 +106,23 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
+@app.route('/load-temp/', methods=['POST'])
+def load_temp():
+    ontologies = [];
+    for file in os.listdir(UPLOAD_FOLDER):
+        if file.endswith('.owl') or file.endswith('.ttl') or file.endswith('.rdf') or file.endswith('.xrdf') or file.endswith('.xml'):
+            ontologies.append(UPLOAD_FOLDER+file);
+
+    print(ontologies);
+
+
+    for p in ontologies:
+        ontology_pipeline.generateOntoEmbedding(p, gloveMap, word2Id, weights);
+
+    response = {};
+    response['loading'] = ontologies;
+    return jsonify(response);
 
 @app.route('/ping/', methods=['POST'])
 def ping():
@@ -141,7 +175,8 @@ def upload_file():
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
             print("filename = " + UPLOAD_FOLDER + filename)
-            ontology_pipeline.ingest(UPLOAD_FOLDER + filename)
+            # ontology_pipeline.ingest(UPLOAD_FOLDER + filename)
+            ontology_pipeline.generateOntoEmbedding(UPLOAD_FOLDER + filename, gloveMap, word2Id, weights);
 
             return redirect(url_for('upload_file',
                                     filename=filename))
@@ -160,19 +195,28 @@ def upload_file():
 def index():
     head = {'ontologies': 'true'}
 
-    onts = view.getFullyInstalledOntologies()
+    # onts = view.getFullyInstalledOntologies()
 
     ontologies = []
-    for ont in onts:
-        print(ont)
+    for ontoName, ontoData in globalVars.loadedOntos.items():
         ontDicr = {
-            'name': ont[0],
-            'iri': ont[1],
-            'version': ont[2],
-            'amrDone': ont[3],
-            'notInProgress': ont[4],
+            'name': ontoName,
+            'iri': ontoData['versionIRI'],
+            'version': ontoData['version'],
+            'amrDone': ontoData['amrDone'],
+            'notInProgress': ontoData['notInProgress'],
         }
         ontologies.append(ontDicr)
+    # for ont in onts:
+    #     print(ont)
+    #     ontDicr = {
+    #         'name': ont[0],
+    #         'iri': ont[1],
+    #         'version': ont[2],
+    #         'amrDone': ont[3],
+    #         'notInProgress': ont[4],
+    #     }
+        #ontologies.append(ontDicr)
     # ontologies = [
     #     {
     #         'name': 'sio',
@@ -363,27 +407,27 @@ def populate_sdd():
         (numResults, dataDict, ontologies) = parsed
 
     graphNames = []
-    onts = view.getFullyInstalledOntologies()
+    # onts = view.getFullyInstalledOntologies()
 
-    #print('onts: ' + str(onts))
-    # print('ontologies: ' + str(ontologies))
 
     found = []
-    # for ont in onts:
-    #     # if ont[3] and ont[4]: # check if its installed
-    #     if ont[4]: # Only check for in database
-    #         if ont[1] in ontologies: # check if we need it
-    #             found.append(ont[1])
-    #             graphNames.append(ont[5])
 
     # Get the SDDGen graph names for the ontologies, these are the ontology iris with versioning info
     for ontIn in ontologies:
-        for storedOnt in onts:
-            if ontIn == storedOnt[1]: # graph IRI match
-                if storedOnt[4]: # Check if installed in database
-                    found.append(storedOnt[1])
-                    graphNames.append(storedOnt[5])
+        for ontoName, ontoData in globalVars.loadedOntos.items():
+            if ontIn == ontoName: # graph IRI match
+                if ontoData['notInProgress']: # Check if installed in database
+                    found.append(ontoName);
+                    graphNames.append(ontoName); # this is no longer needed
+
                 break # we found the ontology no need to keep looking
+
+        # for storedOnt in onts:
+        #     if ontIn == storedOnt[1]: # graph IRI match
+        #         if storedOnt[4]: # Check if installed in database
+        #             found.append(storedOnt[1])
+        #             graphNames.append(storedOnt[5])
+        #         break # we found the ontology no need to keep looking
 
     # print('graphNames = ' + str(graphNames))
 
@@ -401,7 +445,8 @@ def populate_sdd():
         }), 400)
 
     results = SDD(ontologies, sioLabels = True)
-    results = sdd_aligner.transformerMatchWithOntoPriority(results, numResults, dataDict, graphNames, gloveMap, word2Id, model)
+    results = sdd_aligner.transformerMatchSumWords(results, numResults, dataDict, graphNames, gloveMap, word2Id, model)
+    # results = sdd_aligner.transformerMatchWithOntoPriority(results, numResults, dataDict, graphNames, gloveMap, word2Id, model)
     # results = sdd_aligner.semanticLabelMatchWithOntoPriority(results, numResults, dataDict, graphNames, gloveMap)
     # results = sdd_aligner.semanticLabelMatch(results, numResults, dataDict, graphNames, gloveMap)
     # results = sdd_aligner.labelMatch(results, numResults, dataDict, graphNames)
