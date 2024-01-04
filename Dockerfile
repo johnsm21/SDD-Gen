@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM ubuntu:18.04
+FROM ubuntu:24.04
 # COPY . /SDDGen
 
 # Copy code and html
@@ -26,17 +26,17 @@ EXPOSE 5000
 RUN apt update
 RUN apt install -y python3
 RUN apt install -y python3-pip
-RUN pip3 install --upgrade pip
+RUN pip3 install --break-system-packages --upgrade pip
 
 
 ## Instal python requirements
-RUN pip3 install -r app/lib/requirements.txt --no-cache-dir
+RUN pip3 install --break-system-packages -r app/lib/requirements.txt --no-cache-dir
 RUN mkdir -p /root/nltk_data/tokenizers
 RUN mv /app/lib/punkt /root/nltk_data/tokenizers/punkt
 
 ## Run Server on local host
 WORKDIR /app
 
-# ENTRYPOINT ["python3", "main.py"]
+ENTRYPOINT ["python3", "main.py"]
 # Example pks12 declaration
-ENTRYPOINT ["python3", "main.py", "--cert_name", "mykeystore.pkcs12", "--cert_pass", "password"]
+# ENTRYPOINT ["python3", "main.py", "--cert_name", "mykeystore.pkcs12", "--cert_pass", "password"]
