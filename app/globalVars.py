@@ -30,8 +30,8 @@ model_path = config.get('transformer', 'model_path')  # config._sections.transfo
 max_sent_length = config.getint('transformer', 'max_sent_length')
 
 
-ts_base_url = config.get('fuseki', 'url') # config._sections.blazegraph.ts_base_url #"http://localhost:9999" #'http://host.docker.internal:9999' # "http://localhost:9999"
-store = sparqlstore.SPARQLUpdateStore(node_to_sparql=my_bnode_ext)
-store.open((ts_base_url + '/ds/query', ts_base_url + '/ds/update'))
+# ts_base_url = config.get('fuseki', 'url') # config._sections.blazegraph.ts_base_url #"http://localhost:9999" #'http://host.docker.internal:9999' # "http://localhost:9999"
+# store = sparqlstore.SPARQLUpdateStore(node_to_sparql=my_bnode_ext)
+# store.open((ts_base_url + '/ds/query', ts_base_url + '/ds/update'))
 
 httpsOn = config.getboolean('sddgen', 'enableHTTPS')
