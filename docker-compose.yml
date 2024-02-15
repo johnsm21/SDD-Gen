@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-    # The primary sdd-gen web app
+
     sddgen:
         build: ./
         restart: always
@@ -16,28 +16,8 @@ services:
         volumes:
             - $PWD/cert:/app/cert
 
-   # The sdd-gen fuseki instance
-    # fuseki:
-    #     build:
-    #         context: ./fuseki
-    #         dockerfile: Dockerfile
-    #     container_name: sddgen_fuseki
-    #     networks:
-    #         sddgen:
-    #             aliases:
-    #                 - sddgen
-    #     ports:
-    #         - "3030:3030"
-    #     restart: always
-    #     environment:
-    #         JAVA_XMS: 512m
-    #         JAVA_XMX: 4g
-    #     volumes:
-    #         - sddgen-fuseki:/usr/share/data atomgraph/fuseki
-
 volumes:
     cert:
-    # sddgen-fuseki:
 
 networks:
     sddgen:

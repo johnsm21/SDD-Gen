@@ -1,16 +1,10 @@
-# SDDGen
-Datasets in the wild often have data dictionaries (definitions explaining a column or row within a dataset) associated with them to provide humans with a better understanding of the data. Recently researchers have developed a formal methodology to capture and share this information in a machine-readable way through [Semantic Data Dictionaries](https://tetherless-world.github.io/sdd/)(SDD)[1]. However, to form a SDD a domain expert (medical doctor, scientist) needs to manually map attribute/subjects to ontological terms. This process can be challenging because domain experts are often not ontology experts.
+# SDD-Gen
+Knowledge graphs have become an essential technology for both businesses and governments. They enable a wide variety of critical tasks, such as aligning diverse datasets, improving the capabilities of search engines, supporting error checking, and generating explanations using inference engines. However, populating or augmenting a knowledge graph can be challenging because developers need domain knowledge to understand their data and experience in ontology modeling to align concepts.
 
-To address this issue our team has created SDDGen a web service that automates the SDD generation process. Provided with a data dictionary and a list of ontologies to form mappings from SDDGen generates an SDD along with the other N-1 most likely mappings for each cell. This allows domain experts to focus on reviewing mappings instead of exploring ontologies for terms which expedites SDD creation.
-
-To form mappings SDDGen uses a transformer network to generate embeddings for ontology class descriptions and data dictionary definitions. Then within this new search space we find which ontology classes align best with SDD properties.
+To address this issue, our team has created the semantic data dictionary generator (SDD-Gen), a web service that automates the tabular alignment process [1]. SDD-Gen aligns tabular data to ontological terms for knowledge graph generation. Our methodology uses transformer networks to leverage context information from data dictionary descriptions to generate column embeddings that capture each column's upper-level class types. We then compare these embeddings to ontology class embeddings generated using the L1-normalized average word vectors of the class label. All suggested alignments are represented using the [Semantic Data Dictionary](https://tetherless-world.github.io/sdd/)(SDD) format [2].
 
 ## Requirements
 [python 3](https://www.python.org/download/releases/3.0/)
-
-[java 8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
-
-[blazegraph](https://www.blazegraph.com/download/)
 
 ## Install
 ``` bash
@@ -20,10 +14,10 @@ apt-get install python3-venv
 apt-get install python3-dev
 
 # Clone Project
-git clone https://github.com/johnsm21/SDDGen.git
+git clone https://github.com/johnsm21/SDD-Gen.git
 
 # Create Virtual environment
-cd SDDGen
+cd SDD-Gen
 python3 -m venv env
 source env/bin/activate
 
@@ -31,33 +25,18 @@ source env/bin/activate
 pip3 install -r requirements.txt
 python3 -m nltk.downloader all
 
-# Copy glove model glove.6B.50d.txt into SDDGen/lib folder
+# Copy glove model glove.6B.50d.txt into SDD-Gen/lib folder
 https://drive.google.com/file/d/1Lf3rHNTjb1UFTEM0XeK2djimXQZaYjJO/view?usp=sharing
 
-# Copy transformer model 1000ep.pt into SDDGen/lib folder
-https://drive.google.com/file/d/1GdVpDEI7MRJRMng78CmNOKO4yzpQiY7C/view?usp=sharing
-
-# Run Blazegraph (a copy of RWStore.properties is within SDDGen/lib)
-java -server -Xmx4g -Dbigdata.propertyFile=RWStore.properties -jar blazegraph.jar
-
-# Setup quad Namespace in Blazegraph goto
-http://localhost:9999/blazegraph/#namespaces
-
-# Create new namespace called mapper
-
-# Set it to quads
-
-# Click Create namespace
+# Copy transformer model attributeSDD_10ke.pt into SDD-Gen/lib folder
+https://drive.google.com/file/d/1imYNGCvRv1y5QxSf7VYXzmsX1WoRPKGn/view?usp=drive_link
 ```
 
 ## Running
 ``` bash
 # Run Server
-cd SDDGen
-FLASK_APP=main.py flask run --host=0.0.0.0
-
-# Break down Virtual environment
-deactivate
+cd SDD-Gen
+python3 main.py
 ```
 
 ## Loading an Ontology
@@ -74,4 +53,6 @@ http://localhost:5000/ontologies/
 ```
 
 ## References
-[1] Rashid, Sabbir M., et al. "The Semantic Data Dictionary Approach to Data Annotation & Integration." SemSci@ ISWC. 2017.
+[1] M. Johnson, J. A. Stingone, S. Bengoa, J. Masters, and D. L. McGuinness, “Complex semantic tabular interpretation using sdd-gen,” in *2024 IEEE 18th International Conference on Semantic Computing (ICSC)*. IEEE, 2024.
+
+[2] S. M. Rashid, K. Chastain, J. A. Stingone, D. L. McGuinness, and J. McCusker, “The semantic data dictionary approach to data annotation & integration.” *SemSci@ ISWC*, vol. 2017, 2017.
