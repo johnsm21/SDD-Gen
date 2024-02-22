@@ -6,7 +6,12 @@ To address this issue, our team has created the semantic data dictionary generat
 ## Requirements
 [python 3.11](https://www.python.org/downloads/release/python-3115/)
 
-## Install
+## Docker Install
+``` bash
+docker pull johnsm21/sdd-gen
+docker run -p 5000:5000 johnsm21/sdd-gen
+```
+## GitHub Install
 ``` bash
 # Install dependencies
 apt-get install unzip
@@ -15,38 +20,17 @@ apt-get install python3-dev
 
 # Clone Project
 git clone https://github.com/johnsm21/SDD-Gen.git
-
-# Create Virtual environment
 cd SDD-Gen
-python3 -m venv env
-source env/bin/activate
 
-# Install python packages
+# Install python packages and NLP libraries
 pip3 install -r lib/requirements.txt
 python3 -m nltk.downloader all
 
-# Copy glove model glove.6B.50d.txt and transformer model into SDD-Gen/lib folder
+# Copy GloVe vectors and transformer model into the SDD-Gen/lib folder
 python3 downloadModel.py
-```
 
-## Running
-``` bash
 # Run Server
-cd SDD-Gen
 python3 app/main.py
-```
-
-## Loading an Ontology
-``` bash
-# Go to
-http://localhost:5000/upload/
-
-# Choose owl file
-
-# Click Upload
-
-# Check to see all installed ontologies
-http://localhost:5000/ontologies/
 ```
 
 ## References
