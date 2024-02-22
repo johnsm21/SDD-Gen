@@ -28,7 +28,7 @@ protobuf==4.25.1
 psutil==5.9.7
 ptyprocess==0.7.0
 pycparser==2.21
-pyOpenSSL==23.3.0
+pyOpenSSL==24.0.0
 pyparsing==3.1.1
 PySocks==1.7.1
 rdflib==7.0.0

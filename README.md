@@ -4,7 +4,7 @@ Knowledge graphs have become an essential technology for both businesses and gov
 To address this issue, our team has created the semantic data dictionary generator (SDD-Gen), a web service that automates the tabular alignment process [1]. SDD-Gen aligns tabular data to ontological terms for knowledge graph generation. Our methodology uses transformer networks to leverage context information from data dictionary descriptions to generate column embeddings that capture each column's upper-level class types. We then compare these embeddings to ontology class embeddings generated using the L1-normalized average word vectors of the class label. All suggested alignments are represented using the [Semantic Data Dictionary](https://tetherless-world.github.io/sdd/)(SDD) format [2].
 
 ## Requirements
-[python 3](https://www.python.org/download/releases/3.0/)
+[python 3.11](https://www.python.org/downloads/release/python-3115/)
 
 ## Install
 ``` bash
@@ -25,13 +25,8 @@ source env/bin/activate
 pip3 install -r lib/requirements.txt
 python3 -m nltk.downloader all
 
-# Copy glove model glove.6B.50d.txt into SDD-Gen/lib folder
-<a href="https://drive.google.com/file/d/1Lf3rHNTjb1UFTEM0XeK2djimXQZaYjJO/view?usp=sharing">https://drive.google.com/file/d/1Lf3rHNTjb1UFTEM0XeK2djimXQZaYjJO/view?usp=sharing</a>
-[](https://drive.google.com/file/d/1Lf3rHNTjb1UFTEM0XeK2djimXQZaYjJO/view?usp=sharing)
-
-# Copy transformer model attributeSDD_10ke.pt into SDD-Gen/lib folder
-<a href="https://drive.google.com/file/d/1imYNGCvRv1y5QxSf7VYXzmsX1WoRPKGn/view?usp=drive_link">https://drive.google.com/file/d/1imYNGCvRv1y5QxSf7VYXzmsX1WoRPKGn/view?usp=drive_link</a>
-[https://drive.google.com/file/d/1imYNGCvRv1y5QxSf7VYXzmsX1WoRPKGn/view?usp=drive_link](https://drive.google.com/file/d/1imYNGCvRv1y5QxSf7VYXzmsX1WoRPKGn/view?usp=drive_link)
+# Copy glove model glove.6B.50d.txt and transformer model into SDD-Gen/lib folder
+python3 downloadModel.py
 ```
 
 ## Running
