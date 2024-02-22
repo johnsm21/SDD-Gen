@@ -8,6 +8,6 @@ output = 'lib/glove.6B.50d.pckl'
 gdown.download(url, output, quiet=False);
 
 # download transformers
-url = 'https://drive.google.com/uc?id=1GdVpDEI7MRJRMng78CmNOKO4yzpQiY7C'
-output = 'lib/1000ep.pt'
+url = 'https://drive.google.com/uc?id=1imYNGCvRv1y5QxSf7VYXzmsX1WoRPKGn'
+output = 'lib/attributeSDD_10ke.pt'
 gdown.download(url, output, quiet=False);
