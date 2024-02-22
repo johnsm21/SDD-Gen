@@ -1,3 +1,4 @@
+beautifulsoup4==4.12.3
 blinker==1.7.0
 bllipparser==2021.11.7
 certifi==2023.11.17
@@ -10,6 +11,7 @@ filelock==3.13.1
 Flask==3.0.0
 Flask-Cors==4.0.0
 fsspec==2023.12.2
+gdown==5.1.0
 idna==3.6
 isodate==0.6.1
 itsdangerous==2.1.2
@@ -28,11 +30,13 @@ ptyprocess==0.7.0
 pycparser==2.21
 pyOpenSSL==23.3.0
 pyparsing==3.1.1
+PySocks==1.7.1
 rdflib==7.0.0
 regex==2023.10.3
 requests==2.31.0
 scipy==1.11.4
 six==1.16.0
+soupsieve==2.5
 SPARQLWrapper==2.0.0
 sympy==1.12
 textblob==0.17.1

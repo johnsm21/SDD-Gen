@@ -26,9 +26,11 @@ pip3 install -r lib/requirements.txt
 python3 -m nltk.downloader all
 
 # Copy glove model glove.6B.50d.txt into SDD-Gen/lib folder
-[https://drive.google.com/file/d/1Lf3rHNTjb1UFTEM0XeK2djimXQZaYjJO/view?usp=sharing](https://drive.google.com/file/d/1Lf3rHNTjb1UFTEM0XeK2djimXQZaYjJO/view?usp=sharing)
+<a href="https://drive.google.com/file/d/1Lf3rHNTjb1UFTEM0XeK2djimXQZaYjJO/view?usp=sharing">https://drive.google.com/file/d/1Lf3rHNTjb1UFTEM0XeK2djimXQZaYjJO/view?usp=sharing</a>
+[](https://drive.google.com/file/d/1Lf3rHNTjb1UFTEM0XeK2djimXQZaYjJO/view?usp=sharing)
 
 # Copy transformer model attributeSDD_10ke.pt into SDD-Gen/lib folder
+<a href="https://drive.google.com/file/d/1imYNGCvRv1y5QxSf7VYXzmsX1WoRPKGn/view?usp=drive_link">https://drive.google.com/file/d/1imYNGCvRv1y5QxSf7VYXzmsX1WoRPKGn/view?usp=drive_link</a>
 [https://drive.google.com/file/d/1imYNGCvRv1y5QxSf7VYXzmsX1WoRPKGn/view?usp=drive_link](https://drive.google.com/file/d/1imYNGCvRv1y5QxSf7VYXzmsX1WoRPKGn/view?usp=drive_link)
 ```
 

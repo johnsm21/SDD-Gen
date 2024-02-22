@@ -5,19 +5,12 @@ services:
     sddgen:
         build: ./
         restart: always
-        container_name: sddgen
+        container_name: SDD-Gen
         tty: true
         ports:
             - "5000:5000"
-        networks:
-            sddgen:
-                aliases:
-                    - sddgen
         volumes:
             - $PWD/cert:/app/cert
 
 volumes:
     cert:
-
-networks:
-    sddgen:

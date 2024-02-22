@@ -38,10 +38,12 @@ import tempfile
 from cryptography.hazmat.primitives import serialization
 import cryptography.hazmat.primitives.serialization.pkcs12
 
+template_dir = os.path.abspath('templates');
+static_dir = os.path.abspath('static');
+app = Flask(__name__, static_folder=static_dir, template_folder=template_dir);
 
-app = Flask(__name__)
-UPLOAD_FOLDER = "temp/"
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+UPLOAD_FOLDER = "temp/";
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER;
 
 globalVars.init()
 
@@ -581,8 +583,8 @@ def main():
     head = {'home': 'true'}
     message = {
         'glove': str('gloveMap' in globals()),
-        'model': str('model' in globals()),
-        'ts': str(TsConnected())
+        'model': str('model' in globals())
+        #'ts': str(TsConnected())
     }
     return render_template('home.html', head=head, message=message)
 
